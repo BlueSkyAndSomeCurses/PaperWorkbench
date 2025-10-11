@@ -1,0 +1,11 @@
+[tool.ruff.lint]
+select = ["ERA001", "YTT", "ANN", "BLE", "B", "A", "COM", "C4", "INT", "ICN", "PIE", "T20", "RSE102", "RET", "SIM", "TID", "TC", "ARG", "PTH", "FLY", "I", "NPY", "N", "W", "RUF"]
+ignore = ["CPY001"]
+
+fixable=["ALL"]
+unfixable=["F401"]
+
+[tool.ruff.format]
+quote-style="double"
+indent-style="space"
+skip-magic-trailing-comma=true
