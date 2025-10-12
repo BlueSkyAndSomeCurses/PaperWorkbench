@@ -1,11 +1,16 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 
-from nltk import sent_tokenize
-import numpy as np
 import re
-from langchain_openai import OpenAIEmbeddings
 
-def  get_sentences(paper):
+import nltk
+import numpy as np
+from langchain_openai import OpenAIEmbeddings
+from nltk import sent_tokenize
+
+nltk.download("punkt")
+
+
+def get_sentences(paper):
     """
     Get the list of sentences for the paper.
     :param paper: paper without conclusions and references.
@@ -14,12 +19,14 @@ def  get_sentences(paper):
     search = re.search(r"## Abstract[^#]*", paper)
     if search:
         l, r = search.span()
-        paper = paper[:l] + paper[r-1:]
+        paper = paper[:l] + paper[r - 1 :]
     paragraphs = "\n".join(
-        [p for p in paper.split("\n") if p and not (p[0] == '#' or p[:2] == '![')])
-    sentences = [s.split('\n')[-1] for s in sent_tokenize(paragraphs)]
+        [p for p in paper.split("\n") if p and not (p[0] == "#" or p[:2] == "![")]
+    )
+    sentences = [s.split("\n")[-1] for s in sent_tokenize(paragraphs)]
 
     return sentences
+
 
 def get_references(references):
     """
@@ -27,19 +34,20 @@ def get_references(references):
     :param references:
     :return: list of references.
     """
-    ref_list = references.split('\n')
-    ref_list = [('.'.join(r.split('.')[1:])).strip()
-                for r in ref_list if r.strip()]
+    ref_list = references.split("\n")
+    ref_list = [(".".join(r.split(".")[1:])).strip() for r in ref_list if r.strip()]
     return ref_list
+
 
 def reorder_references(reference_index, references):
     new_references = []
     for key in sorted(reference_index.keys()):
         for i in range(len(reference_index[key])):
-            j = len(new_references)+1
+            j = len(new_references) + 1
             reference_index[key][i], j = j, reference_index[key][i]
-            new_references.append(references[j-1])
+            new_references.append(references[j - 1])
     return new_references
+
 
 def insert_references(draft):
     """
@@ -85,9 +93,9 @@ def insert_references(draft):
         for i in range(len(citation_inserts)):
             s = citation_inserts[i]
             if s in citations:
-                citations[s].append(i+1)
+                citations[s].append(i + 1)
             else:
-                citations[s] = [i+1]
+                citations[s] = [i + 1]
 
         references = reorder_references(citations, references)
 
@@ -96,21 +104,15 @@ def insert_references(draft):
         for s in citations:
             l = paper.find(sentences[s])
             r = l + len(sentences[s])
-            cit = ",".join([
-                f'<a href="#{i}">{i}</a>'
-                for i in citations[s]])
-            paper = paper[:r-1] + f" [{cit}]" + paper[r-1:]
+            cit = ",".join([f'<a href="#{i}">{i}</a>' for i in citations[s]])
+            paper = paper[: r - 1] + f" [{cit}]" + paper[r - 1 :]
 
         # generated clickable references
-        references = [f'<p id={i+1}>{i+1}. {r.strip()}</p>'
-                      for i, r in enumerate(references)]
+        references = [
+            f"<p id={i + 1}>{i + 1}. {r.strip()}</p>" for i, r in enumerate(references)
+        ]
 
         # create new draft of the paper.
-        draft = (
-            paper.strip() +
-            "\n\n## References\n\n" +
-            "\n\n".join(references)
-        )
+        draft = paper.strip() + "\n\n## References\n\n" + "\n\n".join(references)
 
     return draft
-

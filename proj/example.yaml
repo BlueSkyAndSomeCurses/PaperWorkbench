@@ -1,41 +1,19 @@
 title: "PaperWorknech says hi"
-suggest_title: True
-generate_citations: True
+suggest_title: False
+generate_citations: False
 model_name: "gpt-5-nano"
 type_of_document: "Research conference paper"
 area_of_paper: "Mathematics"
 section_names:
     - Introduction
-    - Related Work
-    - Results
-    - Conclusions
-    - References
 number_of_paragraphs:
     "Introduction": 1
-    "Related Work": 1
-    "Results": 1
-    "Conclusions": 1
-    "References": 0
 hypothesis: "We want to prove the pythagorean theorem using squares and triangles."
 instructions: |
     For the following instructions, you should use your own words.
     The section 'Introduction', you should focus on:
     In the first paragraph, describe the problem of finding hypotenus in a triangle.
-    In the section 'Related work', you should show the picture
-    '/file=images/multi-agent.jpeg' to discuss we write a paper by defining a
-    title and hypothesis, writing topic sentences, expanding topic sentences into
-    paragraphs, writing the paragraphs, and finally reviewing what you have written.
-results: >
-    In this section provide a quick derivation of pythagorean theorem then, as in an example on how you can put a results table. In the table you can put katets and hypotenus lengths
-    <table>
-    <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-    </table>
-references:
-    - "Harrison Chase, Rotem Weiss. AI Agents in LangGraph. https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph"
-number_of_queries: 8
+    Write the main formula of pythagorean triangle. Insert the picture `multi-agent.jpeg`.
+number_of_queries: 0
 max_revisions: 1
 temperature: 1

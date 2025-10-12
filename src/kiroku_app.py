@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -169,6 +170,7 @@ class DocumentWriter:
         :param state: state of agent.
         :return: next state of agent.
         """
+
         if not state["messages"]:
             return "next_phase"
         return "review_more"
@@ -423,14 +425,16 @@ class KirokuUI:
         review_instructions = "\n\n".join(state.values.get("review_instructions", []))
         content = "\n\n".join(state.values.get("content", []))
 
-        dir = os.path.splitext(filename)[0]
+        dir_ = filename.parent / filename.stem
+
+        dir_.mkdir(exist_ok=True, parents=True)
+
         try:
-            shutil.rmtree(dir)
-        except:
-            pass
-        os.mkdir(dir)
-        os.symlink(self.images, dir + "/images")
-        base_filename = dir + "/" + dir.split("/")[-1]
+            (dir_ / "images").symlink_to(self.images)
+        except Exception as err:
+            logging.error(f"Error occurred while creating symlink for images {err}")
+        base_filename = str(dir_ / dir_.name)
+        logging.info(f"Saving to {base_filename}")
         with open(base_filename + ".md", "w") as fp:
             fp.write(draft)
             logging.warning(f"saved file {base_filename + '.md'}")
@@ -452,6 +456,30 @@ class KirokuUI:
                     "docx",
                     "-o",
                     f"{base_filename + '.docx'}",
+                ]
+            )
+
+            subprocess.run(
+                [
+                    "pandoc",
+                    "-s",
+                    f"{base_filename + '.md'}",
+                    "-f",
+                    "markdown",
+                    "-t",
+                    "latex",
+                    "-o",
+                    f"{base_filename + '.tex'}",
+                ]
+            )
+            subprocess.run(
+                [
+                    "pandoc",
+                    "-s",
+                    f"{base_filename + '.md'}",
+                    "-o",
+                    f"{base_filename + '.pdf'}",
+                    "--pdf-engine=pdflatex",
                 ]
             )
         except:
@@ -587,4 +615,10 @@ def run() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,
+    )
     run()

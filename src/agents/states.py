@@ -34,7 +34,7 @@ class AgentState(TypedDict):
     state: str
 
     title: str
-    messages: str
+    messages: list
     hypothesis: str
     area_of_paper: str
     type_of_document: str
@@ -76,6 +76,9 @@ class SuggestTitle(State):
         :param state: state of the agent.
         :return: fields 'title', 'draft' and 'messages' updated for the paper.
         """
+
+        logging.info(f"state {self.name}: running")
+
         messages = state["messages"]
         if not messages:
             title = state["title"]
@@ -116,6 +119,9 @@ class SuggestTitleReview(State):
         :param state: state of the agent.
         :return: fields 'title', 'draft' and 'messages' updated for the paper.
         """
+
+        logging.info(f"state {self.name}: running")
+
         messages = state["messages"]
         instruction = config["configurable"]["instruction"]
         if not instruction:
@@ -218,6 +224,9 @@ class InternetSearch(State):
         :param state: current state of the agent.
         :return: field 'content' added to state.
         """
+
+        logging.info(f"state {self.name}: running")
+
         queries = {"queries": []}
         task = self.create_task(
             title=state["title"],
@@ -290,6 +299,8 @@ class TopicSentenceWriter(State):
         :param state: current state of the agent.
         :return: field 'plan' added to the state.
         """
+
+        logging.info(f"state {self.name}: running")
         task = state["task"]
         content = "\n\n".join(state["content"])
         messages = state["messages"]
@@ -330,6 +341,8 @@ class TopicSentenceManualReview(State):
         :param state: current state of agent.
         :return: fields 'instruction' and 'plan' added to state.
         """
+
+        logging.info(f"state {self.name}: running")
         review_topic_sentences = state.get("review_topic_sentences", [])
         messages = state["messages"]
         instruction = config["configurable"]["instruction"]
@@ -380,6 +393,8 @@ class PaperWriter(State):
         :param state: current state of the agent.
         :return: field 'draft' and 'revision_number' added to the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         content = "\n\n".join(state.get("content", []))
         critique = state.get("critique", "")
         review_instructions = state.get("review_instructions", [])
@@ -434,6 +449,8 @@ class WriterManualReviewer(State):
         :param state: current state of the paper.
         :return: Reviewed 'draft' and add to list of instructions.
         """
+
+        logging.info(f"state {self.name}: running")
         review_instructions = state.get("review_instructions", [])
         instruction = config["configurable"]["instruction"]
         draft = state["draft"]
@@ -488,6 +505,8 @@ class ReflectionReviewer(State):
         :param state: current state of the agent.
         :return: 'critique' of the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         review_instructions = "\n".join(state.get("review_instructions", []))
         messages = [
             SystemMessage(
@@ -532,6 +551,8 @@ class ReflectionCritiqueReviewer(State):
         :param state: current state of the agent.
         :return: additional searched content to improve paper.
         """
+
+        logging.info(f"state {self.name}: running")
         queries = {"queries": []}
         result = self.model.invoke(
             [
@@ -575,6 +596,8 @@ class WriteAbstract(State):
         :param state: current state of the agent.
         :return: updated field 'draft' of the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         human_content = (
             f"Here is my task:\n\n{state['task']}\n\n"
             f"Here is my plan:\n\n{state['plan']}\n\n"
@@ -602,6 +625,8 @@ class GenerateFigureCaptions(State):
         :param state: current state of the agent.
         :return: field 'draft' reviewed to the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         draft = state["draft"]
         pattern = r"!\[([^\]]*)\]\(([^\)]*)\)"
 
@@ -633,6 +658,8 @@ class GenerateReferences(State):
         :param state: current state of the agent.
         :return: field 'references' reviewed to the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         content = state["content"]
         joined_content = "\n\n".join(content)
         human_content = (
@@ -663,6 +690,8 @@ class GenerateCitations(State):
         :param state: current state of the agent.
         :return: field 'draft' reviewed to the paper.
         """
+
+        logging.info(f"state {self.name}: running")
         references = state["references"]
         draft = state["draft"]
         draft = draft + "\n\n" + references

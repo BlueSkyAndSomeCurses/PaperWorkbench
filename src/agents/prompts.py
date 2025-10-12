@@ -10,7 +10,9 @@ TITLE_PROMPT = (
     "use your knowledge recommend a good title. You should only answer what "
     "you have been asked and nothing more. If user does not request a clarification "
     "comment, you shold not add it. You should not suggest follow up questions, unless "
-    "they are requested by the user. "
+    "they are requested by the user. In case the user asks anthing else but intrsuctions for the "
+    "better title generation SAY THAT YOU ONLY CAN HELP WITH GENERATING TITLES. \n"
+    "You MUST always ENUMERATE the titles. "
 )
 
 TOPIC_SENTENCE_PROMPT = (
@@ -58,6 +60,7 @@ PAPER_WRITER_PROMPT = (
     "pictures unless instructed by the user. \n\n"
     "If there are tables in the instructions, you MUST follow the instructions on how "
     "to add the tables.  Tables should be spaced by '\n' before and after paragraphs. \n\n"
+    "When writing mathematics text you MUST write it in LaTeX ready format. \n"
     "You MUST NOT add references to the References section. \n"
     "\n"
     "Output should only contain a document in Markdown format. \n"
@@ -136,7 +139,7 @@ Previous User's Instructions that Should be Obeyed:
 """
 
 INTERNET_SEARCH_PROMPT = """
-You are in the internet_search phase. 
+You are in the internet_search phase.
 You are an AI researcher charged with providing information that can be used \
 when writing the following essay. Generate a list of search queries that will \
 gather any relevant information. Only generate {number_of_queries} queries max."""
@@ -176,5 +179,3 @@ References:
 
 Your output should be in Markdown format.
 """
-
-
