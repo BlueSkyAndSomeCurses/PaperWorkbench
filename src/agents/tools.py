@@ -1,24 +1,18 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 
-from langchain_community.utilities import WikipediaAPIWrapper, ArxivAPIWrapper
-from langchain_experimental.utilities import PythonREPL
-from langchain_community.tools import (
-    WikipediaQueryRun,
-    ArxivQueryRun,
-)
-from tavily import TavilyClient
 import os
 
-from .pubmed import PubMedAPIWrapper
+from decouple import config
+from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun
 from langchain_community.tools.pubmed.tool import PubmedQueryRun
+from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
 from langchain_core.tools import Tool
+from langchain_experimental.utilities import PythonREPL
+from tavily import TavilyClient
 
-tavily_api_key = os.environ.get("TAVILY_API_KEY")
+from .pubmed import PubMedAPIWrapper
 
-if tavily_api_key:
-    tavily = TavilyClient(tavily_api_key)
-else:
-    tavily = None
+tavily = TavilyClient(config("TAVILY_API_KEY"))
 
 pubmed = PubmedQueryRun()
 pubmed.api_wrapper = PubMedAPIWrapper()

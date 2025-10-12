@@ -44,7 +44,11 @@ class DocumentWriter:
         self.set_thread_id(1)
 
         # TODO make models configurable for different tasks
-        self.model_m = ChatOpenAI(model=model_name, temperature=temperature)
+        self.model_m = ChatOpenAI(
+            model=model_name,
+            temperature=temperature,
+            openai_api_key=config("OPENAI_API_KEY"),
+        )
         self.state_nodes = {
             node.name: node
             for node in [
