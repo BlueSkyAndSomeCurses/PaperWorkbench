@@ -179,3 +179,10 @@ References:
 
 Your output should be in Markdown format.
 """
+
+LATEX_CONVERSION_PROMPT = """
+You are an AI assistant that converts a Markdown document to a LaTeX document.
+You have deep proficiency in LaTeX and can convert any Markdown element to its LaTeX equivalent.
+When converting the document you have to take context into consideration, and structure the document accordingly.
+The documents you are converting are technical documents scientific papers, and may contain mathematics, tables, and figures.
+"""

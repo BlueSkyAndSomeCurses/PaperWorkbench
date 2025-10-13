@@ -66,6 +66,7 @@ class DocumentWriter:
                 GenerateReferences(self.model_m),
                 GenerateCitations(self.model_m),
                 GenerateFigureCaptions(self.model_m),
+                LaTeXConverter(self.model_m),
             ]
             if self.mask_nodes(node.name)
         }
@@ -136,7 +137,8 @@ class DocumentWriter:
             builder.add_edge("generate_citations", "generate_figure_captions")
         else:
             builder.add_edge("write_abstract", "generate_figure_captions")
-        builder.add_edge("generate_figure_captions", END)
+        builder.add_edge("generate_figure_captions", "latex_converter")
+        builder.add_edge("latex_converter", END)
 
         # Starting state is either suggest_title or planner.
         if self.suggest_title:
@@ -415,7 +417,10 @@ class KirokuUI:
         filename = self.filename
         state = self.writer.get_state()
 
+        print(state)
+
         draft = state.values.get("draft", "")
+        latex_draft = state.values.get("latex_draft", "")
         # need to replace file= by empty because of gradio problem in Markdown
         draft = re.sub(r"\/?file=", "", draft)
         plan = state.values.get("plan", "")
@@ -443,6 +448,9 @@ class KirokuUI:
         with open(base_filename + ".html", "w") as fp:
             fp.write(html)
 
+        with open(base_filename + ".tex", "w") as fp:
+            fp.write(latex_draft)
+
         try:
             # Use pandoc to convert to docx
             subprocess.run(
@@ -469,7 +477,7 @@ class KirokuUI:
                     "-t",
                     "latex",
                     "-o",
-                    f"{base_filename + '.tex'}",
+                    f"{base_filename + 'pandoc.tex'}",
                 ]
             )
             subprocess.run(

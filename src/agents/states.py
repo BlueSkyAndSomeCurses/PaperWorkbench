@@ -11,12 +11,14 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from .gen_citations import insert_references
 from .prompts import (
     ABSTRACT_WRITER_PROMPT,
     INTERNET_SEARCH_PROMPT,
+    LATEX_CONVERSION_PROMPT,
     PAPER_WRITER_PROMPT,
     REFERENCES_PROMPT,
     REFLECTION_REVIEWER_PROMPT,
@@ -58,6 +60,7 @@ class AgentState(TypedDict):
     number_of_queries: int
     max_revisions: int
     sentences_per_paragraph: int
+    latex_draft: str
 
 
 class State:
@@ -697,3 +700,31 @@ class GenerateCitations(State):
         draft = draft + "\n\n" + references
         draft = insert_references(draft)
         return {"state": self.name, "draft": draft}
+
+
+class LaTeXConverter(State):
+    def __init__(self, model: ChatOpenAI):
+        super().__init__(model, "latex_converter")
+
+    def run(self, state: AgentState):
+        """
+        Convert LaTeX in the paper to Markdown format.
+        :param state: current state of the agent.
+        :return: field 'draft' reviewed to the paper.
+        """
+
+        logging.info(f"state {self.name}: running")
+        logging.info(state)
+        draft = state["draft"]
+
+        result = self.model.invoke(
+            [
+                SystemMessage(content=(LATEX_CONVERSION_PROMPT)),
+                HumanMessage(
+                    content=f"Convert the following markdown to LaTeX:\n\n{draft}"
+                ),
+            ]
+        )
+        logging.info(result)
+
+        return {"state": self.name, "latex_draft": result.content}

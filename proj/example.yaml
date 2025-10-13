@@ -1,4 +1,4 @@
-title: "PaperWorknech says hi"
+title: "Pythagorean Theorem Proof"
 suggest_title: False
 generate_citations: False
 model_name: "gpt-5-nano"
@@ -15,5 +15,5 @@ instructions: |
     In the first paragraph, describe the problem of finding hypotenus in a triangle.
     Write the main formula of pythagorean triangle. Insert the picture `multi-agent.jpeg`.
 number_of_queries: 0
-max_revisions: 1
+max_revisions: 0
 temperature: 1
