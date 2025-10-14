@@ -4,12 +4,15 @@ import logging
 import os
 import re
 import shutil
+import pandas as pd
 import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
 
+
 import gradio as gr
+import matplotlib
 import markdown
 import yaml
 from IPython.display import Image, display
@@ -19,8 +22,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.states import *
-from src.utils.models import PaperConfig
+from src.agents.suggest_plot import PlotSuggester
+import matplotlib.pyplot as plt
 
+from src.utils.models import PaperConfig
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -277,6 +282,8 @@ class KirokuUI:
         self.next_state = -1
         self.references = []
         self.state_values = PaperConfig()
+        self.writer = None
+        self.plotter = None
 
     def read_initial_state(self, filename: Path) -> PaperConfig:
         """
@@ -407,6 +414,8 @@ class KirokuUI:
                 model_name=model_name,
                 temperature=temperature,
             )
+            self.plotter = PlotSuggester(self.writer.model_m)
+
         return self.state_values, gr.update(interactive=False)
 
     def save_as(self):
@@ -551,6 +560,58 @@ class KirokuUI:
         self.writer.update_state(state)
         return self.update("")
 
+    def handle_plot_suggestion(self, user_data: pd.DataFrame):
+        if self.writer is None:
+            fig, ax = plt.subplots(figsize=(6, 5))
+            ax.text(0.5, 0.5, 'Please upload a YAML configuration file first\nin the "Initial Instructions" tab.', 
+                   ha='center', va='center', fontsize=12, wrap=True)
+            ax.axis('off')
+            code = "# No configuration loaded - please upload a YAML file first"
+            return fig, code
+
+        try:
+            state = self.writer.get_state()
+            draft = state.values.get("draft", "")
+            
+            if not draft:
+                fig, ax = plt.subplots(figsize=(6, 5))
+                ax.text(0.5, 0.5, 'No draft available yet.\nPlease generate paper content first.', 
+                    ha='center', va='center', fontsize=12)
+                ax.axis('off')
+                code = "# No draft available"
+                return fig, code
+            
+            sample_data = pd.DataFrame({
+                'x': [1, 2, 3, 4, 5],
+                'y': [2, 4, 3, 5, 4]
+            })
+            
+            if user_data is not None:
+                try:
+                    logging.info("Generating plot suggestion on user's input...")
+                    data = pd.DataFrame(user_data)
+                except:
+                    logging.info("Generating plot suggestion on sampled data...")
+                    data = sample_data
+            
+            fig, code = self.plotter.suggest_plot(draft, data)            
+            logging.info("Plot generated successfully")
+            
+            print('Returned type:', type(fig))  # <class 'matplotlib.figure.Figure'>
+            # assert isinstance(fig, matplotlib.figure.Figure), f'Returned {type(fig)} instead of Figure!'
+            return gr.update(value=fig), code
+            
+        except Exception as e:
+            logging.error(f"Error in plot suggestion: {e}", exc_info=True)
+            fig, ax = plt.subplots(figsize=(8, 6))
+            error_msg = str(e)
+            if len(error_msg) > 100:
+                error_msg = error_msg[:100] + "..."
+            ax.text(0.5, 0.5, f'Error generating plot:\n{error_msg}', 
+                ha='center', va='center', fontsize=10, color='red', wrap=True)
+            ax.axis('off')
+            return fig, f"# Error: {str(e)}"
+
     def create_ui(self) -> None:
         with gr.Blocks(
             theme=gr.themes.Default(), fill_height=True
@@ -571,6 +632,28 @@ class KirokuUI:
                     for _ in range(1000)
                 ]
                 submit_ref_list = gr.Button("Submit", visible=False)
+
+            with gr.Tab("Plot Suggestion") as self.plottab:
+                with gr.Row():
+                    with gr.Column():
+                        data_input = gr.Dataframe(label="Example Data (paste or upload first 5 rows, set columns)", datatype="str")
+                        plotbutton = gr.Button("Suggest Plot", variant="primary", size="lg")
+                        gr.Markdown("""
+                        Click the button above to generate a plot suggestion based on your paper content.
+                        The system will analyze your draft and create a relevant visualizations.
+                        """)
+                    
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        plotimage = gr.Plot(label="Suggested Plot")
+                    with gr.Column(scale=1):
+                        plotcode = gr.Code(label="Python Code", language="python", lines=20)
+                
+                plotbutton.click(
+                    self.handle_plot_suggestion,
+                    inputs=[data_input],
+                    outputs=[plotimage, plotcode]
+                )
 
             inp.submit(self.update, inp, [markdown, out, inp]).then(
                 lambda: gr.update(
