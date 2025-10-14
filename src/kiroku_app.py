@@ -4,12 +4,18 @@ import logging
 import os
 import re
 import shutil
+from langgraph.managed.base import Type
+from numpy import int16
 import pandas as pd
 import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
 
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List, Set
+import uuid
 
 import gradio as gr
 import matplotlib
@@ -35,6 +41,7 @@ from decouple import config
 
 logging.basicConfig(level=logging.WARNING)
 
+NUM_PLOTS= 5
 
 class DocumentWriter:
     def __init__(
@@ -274,6 +281,17 @@ class DocumentWriter:
             )
         )
 
+@dataclass
+class PlotVersion:
+    """Represents a generated plot version"""
+    id: str
+    figure: plt.Figure
+    code: str
+    timestamp: datetime
+    selected: bool = False
+    
+    def __hash__(self):
+        return hash(self.id)
 
 class KirokuUI:
     def __init__(self, working_dir: Path):
@@ -284,6 +302,9 @@ class KirokuUI:
         self.state_values = PaperConfig()
         self.writer = None
         self.plotter = None
+
+        self.plot_gallery = []
+        self.selected_plot_ids = set()
 
     def read_initial_state(self, filename: Path) -> PaperConfig:
         """
@@ -560,57 +581,163 @@ class KirokuUI:
         self.writer.update_state(state)
         return self.update("")
 
-    def handle_plot_suggestion(self, user_data: pd.DataFrame):
+    def generate_multiple_plots(self, user_data: pd.DataFrame, num_plots: int):
+        """
+        Generates multiple plot variations using LLM calls (num_plots) and adds them to gallery.
+        """
         if self.writer is None:
-            fig, ax = plt.subplots(figsize=(6, 5))
-            ax.text(0.5, 0.5, 'Please upload a YAML configuration file first\nin the "Initial Instructions" tab.', 
-                   ha='center', va='center', fontsize=12, wrap=True)
-            ax.axis('off')
-            code = "# No configuration loaded - please upload a YAML file first"
-            return fig, code
-
+            return self._create_error_message("Please upload a YAML configuration file first")
+        
         try:
             state = self.writer.get_state()
             draft = state.values.get("draft", "")
             
             if not draft:
-                fig, ax = plt.subplots(figsize=(6, 5))
-                ax.text(0.5, 0.5, 'No draft available yet.\nPlease generate paper content first.', 
-                    ha='center', va='center', fontsize=12)
-                ax.axis('off')
-                code = "# No draft available"
-                return fig, code
+                return self._create_error_message("No draft available yet.\nPlease generate paper content first.")
             
-            sample_data = pd.DataFrame({
-                'x': [1, 2, 3, 4, 5],
-                'y': [2, 4, 3, 5, 4]
-            })
+            logging.info(f"Generating {num_plots} plot variation{'s' if num_plots!=1 else ''} in one call...")
             
-            if user_data is not None:
-                try:
-                    logging.info("Generating plot suggestion on user's input...")
-                    data = pd.DataFrame(user_data)
-                except:
-                    logging.info("Generating plot suggestion on sampled data...")
-                    data = sample_data
+            plot_results = []
+            for i in range(num_plots):
+                plot_results.append(self.plotter.suggest_plot(draft, user_data, num_plots=num_plots))
             
-            fig, code = self.plotter.suggest_plot(draft, data)            
-            logging.info("Plot generated successfully")
+            logging.info(f"Plot results:{plot_results}")
+
+            new_plots = []
+            for fig, code in plot_results:
+                plot_version = PlotVersion(
+                    id=str(uuid.uuid4()),
+                    figure=fig,
+                    code=code,
+                    timestamp=datetime.now(),
+                    selected=False
+                )
+                new_plots.append(plot_version)
+                self.plot_gallery.append(plot_version)
             
-            print('Returned type:', type(fig))  # <class 'matplotlib.figure.Figure'>
-            # assert isinstance(fig, matplotlib.figure.Figure), f'Returned {type(fig)} instead of Figure!'
-            return gr.update(value=fig), code
-            
+            logging.info(f"Successfully generated and stored {len(new_plots)} plots.")
+            return self.render_gallery(num_plots)
+
         except Exception as e:
-            logging.error(f"Error in plot suggestion: {e}", exc_info=True)
-            fig, ax = plt.subplots(figsize=(8, 6))
-            error_msg = str(e)
-            if len(error_msg) > 100:
-                error_msg = error_msg[:100] + "..."
-            ax.text(0.5, 0.5, f'Error generating plot:\n{error_msg}', 
-                ha='center', va='center', fontsize=10, color='red', wrap=True)
-            ax.axis('off')
-            return fig, f"# Error: {str(e)}"
+            logging.error(f"Error in generate_multiple_plots: {e}", exc_info=True)
+            return self._create_error_message(f"Critical Error: {str(e)}")
+
+    def toggle_plot_selection(self, plot_id: str):
+        """Toggle selection state of a plot"""
+        if plot_id in self.selected_plot_ids:
+            self.selected_plot_ids.remove(plot_id)
+        else:
+            self.selected_plot_ids.add(plot_id)
+        for plot in self.plot_gallery:
+            if plot.id == plot_id:
+                plot.selected = plot_id in self.selected_plot_ids
+                break
+        
+        return self.update_selection_display()
+
+    def get_selected_plots_code(self):
+        """Get code for all selected plots"""
+        if not self.selected_plot_ids:
+            return "# No plots selected"
+        
+        selected_plots = [p for p in self.plot_gallery if p.id in self.selected_plot_ids]
+        
+        if not selected_plots:
+            return "# No plots selected"
+        
+        code_blocks = []
+        for idx, plot in enumerate(selected_plots, 1):
+            code_blocks.append(f"# Plot {idx}\n{plot.code}")
+        
+        separator = "\n\n" + "#" + "="*70 + "\n\n"
+        return separator.join(code_blocks)
+
+    def render_gallery(self, num_plots):
+        """Render the gallery display with all plots"""
+        if not self.plot_gallery:
+            empty_updates = [gr.update(visible=False)] * num_plots*2
+            return (
+                *empty_updates,
+                "# No plots generated yet\n\nClick 'Generate Plots' to create visualizations.",
+                "Gallery: 0 plots | Selected: 0"
+            )
+        
+
+        gallery_updates = []
+        for i in range(NUM_PLOTS):
+            if i < len(self.plot_gallery):
+                plot = self.plot_gallery[i]
+                gallery_updates.extend([
+                    gr.update(value=plot.figure, visible=True),
+                    gr.update(value=plot.selected, visible=True, interactive=True, label=f"✓ Include Plot {i+1}"),  # Checkbox
+                ])
+            else:
+                gallery_updates.extend([
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                ])
+
+        
+        code = self.get_selected_plots_code()
+        num_selected = len(self.selected_plot_ids)
+        status = f"Gallery: {len(self.plot_gallery)} plot(s) | ✓ Selected: {num_selected}"
+
+        return (*gallery_updates, code, status) 
+
+
+    def update_selection_display(self):
+        """Update only selection-dependent components"""
+        code = self.get_selected_plots_code()
+        num_selected = len(self.selected_plot_ids)
+        status = f"📊 Gallery: {len(self.plot_gallery)} plot(s) | ✓ Selected: {num_selected}"
+        
+        checkbox_updates = []
+        for i in range(NUM_PLOTS):  
+            if i < len(self.plot_gallery):
+                plot = self.plot_gallery[i]
+                checkbox_updates.append(gr.update(value=plot.selected))
+            else:
+                checkbox_updates.append(gr.update())
+        
+        return (*checkbox_updates, code, status)
+
+    def _create_error_message(self, message: str):
+        """Create error display"""
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=11)
+        ax.axis('off')
+        
+        # Return for NUM_PLOTS * 2 components (image + checkbox for each)
+        error_updates = [
+            gr.update(value=fig if i == 0 else None, visible=i == 0) 
+            for i in range(NUM_PLOTS * 2)
+        ]
+        
+        return (
+            *error_updates,
+            f"# Error\n{message}",
+            f"Error: {message}"
+        )
+
+
+    def handle_checkbox_change(self, slot_idx: int, is_checked: bool):
+        """
+        Handle checkbox state change.
+        When a checkbox is clicked, toggle the selection of that plot.
+        """
+        if slot_idx < len(self.plot_gallery):
+            plot = self.plot_gallery[slot_idx]
+            if is_checked and plot.id not in self.selected_plot_ids:
+                self.selected_plot_ids.add(plot.id)
+                plot.selected = True
+            elif not is_checked and plot.id in self.selected_plot_ids:
+                self.selected_plot_ids.remove(plot.id)
+                plot.selected = False
+            
+            logging.info(f"Plot {slot_idx+1} {'selected' if is_checked else 'deselected'}")
+        
+        return self.update_selection_display()
+
 
     def create_ui(self) -> None:
         with gr.Blocks(
@@ -633,28 +760,59 @@ class KirokuUI:
                 ]
                 submit_ref_list = gr.Button("Submit", visible=False)
 
+            plot_components = []
+            plot_imgs = []
+            plot_checkboxes = []
             with gr.Tab("Plot Suggestion") as self.plottab:
                 with gr.Row():
                     with gr.Column():
-                        data_input = gr.Dataframe(label="Example Data (paste or upload first 5 rows, set columns)", datatype="str")
-                        plotbutton = gr.Button("Suggest Plot", variant="primary", size="lg")
-                        gr.Markdown("""
-                        Click the button above to generate a plot suggestion based on your paper content.
-                        The system will analyze your draft and create a relevant visualizations.
-                        """)
-                    
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        plotimage = gr.Plot(label="Suggested Plot")
-                    with gr.Column(scale=1):
-                        plotcode = gr.Code(label="Python Code", language="python", lines=20)
+                        gr.Markdown("### Plot Generator")
+                        data_input = gr.Dataframe(
+                            label="Example Data (optional - paste first few rows)",
+                            datatype="str",
+                        )
+                    with gr.Column():
+                        gr.Markdown("### Controls")
+                        num_plots_slider = gr.Slider(
+                            minimum=1, maximum=5, value=NUM_PLOTS, step=1, 
+                            label="Number of plot variations to generate"
+                        ) 
+                        generate_btn = gr.Button("Generate Plots", variant="primary", size="lg")
                 
-                plotbutton.click(
-                    self.handle_plot_suggestion,
-                    inputs=[data_input],
-                    outputs=[plotimage, plotcode]
+                with gr.Row():
+                    for i in range(5):
+                        with gr.Column():
+                            with gr.Group():
+                                plot_img = gr.Plot(label=f"Plot {i+1}", visible=False)
+                                plot_checkbox = gr.Checkbox(
+                                    label="✓ Select for paper",
+                                    value=False,
+                                    visible=False,
+                                    interactive=True
+                                )
+                                
+                                plot_imgs.append(plot_img)
+                                plot_checkboxes.append(plot_checkbox)
+                                plot_components.extend([plot_img, plot_checkbox]) 
+                selected_code = gr.Code(
+                    label="Python code for selected plots",
+                    language="python",
+                    lines=20,
+                    value="# No plots selected"
                 )
-
+                status_text = gr.Textbox(label="Status", value="Ready to generate plots", interactive=False)
+                generate_btn.click(
+                    self.generate_multiple_plots,
+                    inputs=[data_input, num_plots_slider],
+                    outputs=[*plot_components, selected_code, status_text]
+                )
+                for idx, checkbox in enumerate(plot_checkboxes):
+                    checkbox.change(
+                        lambda is_checked, slot_idx=idx: self.handle_checkbox_change(slot_idx, is_checked),
+                        inputs=[checkbox],
+                        outputs=[*plot_checkboxes, selected_code, status_text]
+                    )
+                
             inp.submit(self.update, inp, [markdown, out, inp]).then(
                 lambda: gr.update(
                     value="",
@@ -691,8 +849,7 @@ class KirokuUI:
             logging.error(f"Error occurred while creating images directory, {err}")
         self.kiroku_agent.launch(
             server_name="localhost"
-        )  # allowed_paths=[working_dir])
-
+        )
 
 def run() -> None:
     working_dir: Path = config(

@@ -9,10 +9,11 @@ import matplotlib
 import logging
 import traceback 
 from io import StringIO 
+from prompts import PLOT_SUGGESTION_PROMPT
 logging.basicConfig(level=logging.WARNING)
 
 MAX_PLOT_ATTEMPTS = 3
-
+PLOT_DELIMITER = "------"
 class PlotSuggester:
     """
     Agent that suggests and generates plots based on paper content.
@@ -25,42 +26,10 @@ class PlotSuggester:
         self, 
         paper_content: str, 
         data: Optional[pd.DataFrame] = None,
-        error_history: str =''
+        error_history: str ='',
     ) -> Tuple[Optional[plt.Figure], str]:
         try:
-            system_prompt = """You are an expert data visualization specialist. 
-            Your task is to suggest relevant plots that would best demonstrate the concepts 
-            in the given paper. Generate Python code that creates a meaningful  visualization.
-
-            When the user provides a data example, use ONLY the column names and general data types as a guide.
-            ALWAYS generate (sample) synthetic data matching these columns for your visualization, rather than plotting the user's provided rows directly. 
-            If the supplied example contains only one or a few rows, your code MUST simulate/generate an appropriate-sized dataset that shows the intended plot meaningfully.
-            You do NOT need to use every column; choose the columns most appropriate for the recommended plot and ignore irrelevant ones. 
-            Especially if there is not enough data - sample/fake additional data matching the schema of the example.
-
-            ALSO
-            - please, import libraries before using functionality of numpy, matplotlib etc
-            - Always assign the created figure to fig.
-            - For single axis: fig, ax = plt.subplots()
-            - For multiple subplots: fig, axes = plt.subplots(nrows=..., ncols=...)
-            - Never use only ax = plt.subplots() (since plt.subplots() returns a tuple, not just an axes object).
-            - Figure Return
-            - Never call plt.show() in the generated code—this is only for local desktop; Gradio renders the Figure object directly.
-            - Do not use plt.savefig() in generated code, unless the UI is meant to support download or file output.
-            - Use plt.tight_layout() before returning the figure to avoid clipped labels and overlapping axis elements.
-
-            When generating Python code, DO NOT include any comments that show how to execute or use the function or commands.
-            Specifically, do NOT create comments such as:
-            # Example usage: fig = create_visualization()
-            Example execution show only as regular code (e.g., fig = create_visualization()), never as a comment.
-
-            Return ONLY valid Python code that:
-            1. Generates appropriate sample data if no data is provided
-            2. Creates a clear, professional visualization
-            3. Returns the figure object
-            
-            Never use comments for function call or usage - only use code."""
-
+            system_prompt = PLOT_SUGGESTION_PROMPT
             data_context = ""
             if data is not None:
                 data_info = data.info(buf=StringIO())
@@ -78,10 +47,11 @@ class PlotSuggester:
 
             if error_history:
                 user_prompt += f"""
-                \n\nCRITICAL CORRECTION REQUIRED
+                CRITICAL CORRECTION REQUIRED
+
                 The previous code attempt failed to execute due to an error.
                 Please review the error traceback and your previous code history below, and generate the corrected, executable Python code block.
-                \nERROR HISTORY:\n{error_history}
+                ERROR HISTORY:{error_history}
                 """
 
             messages = [
@@ -92,13 +62,13 @@ class PlotSuggester:
 
         except Exception as e:
             logging.error(f"Error in suggest_plot: {e}")
-            fig, code = self._create_fallback_plot(data)
-            return fig, code
+            return
 
     def suggest_plot(
         self, 
         paper_content: str, 
-        data: Optional[pd.DataFrame] = None
+        data: Optional[pd.DataFrame] = None,
+        num_plots: int = 3
     ) -> Tuple[Optional[plt.Figure], str]:
         current_attempt = 1
         error_history = ""
@@ -134,8 +104,7 @@ class PlotSuggester:
                     current_attempt += 1
                 else:
                     logging.error(f"LLM failed to generate executable code after {MAX_PLOT_ATTEMPTS} attempts.")
-                    fig, code = self._create_fallback_plot(data)
-                    code = f"# LLM Plot Generation Failed after {MAX_PLOT_ATTEMPTS} Retries. Last Error: {e}"
+                    logging.error(f"# LLM Plot Generation Failed after {MAX_PLOT_ATTEMPTS} Retries. Last Error: {e}")
                     return fig, code
         
         return self._create_fallback_plot(data)
@@ -171,29 +140,3 @@ class PlotSuggester:
         except Exception as e:
             logging.error(f"Error executing plot code: {e}")
             raise
-
-    def suggest_multiple_plots(
-        self, 
-        paper_content: str, 
-        data: Optional[pd.DataFrame] = None,
-        num_plots: int = 3
-    ) -> list[Tuple[Optional[plt.Figure], str]]:
-        """
-        Suggest multiple different plot types for the paper.
-        
-        :param paper_content: The draft content of the paper
-        :param data: Optional pandas DataFrame with data to plot
-        :param num_plots: Number of different plots to generate
-        :return: List of tuples (matplotlib figure, python code as string)
-        """
-        plots = []
-        
-        for i in range(num_plots):
-            try:
-                fig, code = self.suggest_plot(paper_content, data)
-                plots.append((fig, code))
-                plt.close(fig)
-            except Exception as e:
-                logging.error(f"Error generating plot {i+1}: {e}")
-                
-        return plots
