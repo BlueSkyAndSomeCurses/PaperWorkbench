@@ -4,7 +4,8 @@ import logging
 
 from .tools import tools, tavily
 
-def get_additional_info(link):
+
+def get_additional_info(link: str) -> str:
     arxiv = tools["arxiv"]
     pubmed = tools["pub_med"]
     doc = ""
@@ -16,6 +17,7 @@ def get_additional_info(link):
     if doc:
         doc = ", " + doc
     return doc
+
 
 def search_query_ideas(query_ideas, cache, max_results=3, search_engine="tavily"):
     """
@@ -33,8 +35,9 @@ def search_query_ideas(query_ideas, cache, max_results=3, search_engine="tavily"
     else:
         raise "Invalid search engine"
 
-    for iter, q in enumerate(query_ideas["queries"]):
-        if not q: continue
+    for _, q in enumerate(query_ideas["queries"]):
+        if not q:
+            continue
         logging.warning(f"search for query '{q}'")
         if search_engine == "tavily":
             response = search.search(q, max_results=max_results)
@@ -44,9 +47,10 @@ def search_query_ideas(query_ideas, cache, max_results=3, search_engine="tavily"
                     f"link: {result['url']}, "
                     f"content: {result['content']}"
                 )
-                link = result['url']
-                if link[-1] == '/': link = link[:-1]
-                title = result['title']
+                link = result["url"]
+                if link[-1] == "/":
+                    link = link[:-1]
+                title = result["title"]
                 if link in cache or title in cache:
                     continue
                 logging.warning(f"    {link}")

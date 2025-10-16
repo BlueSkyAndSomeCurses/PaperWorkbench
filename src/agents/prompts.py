@@ -1,5 +1,25 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 
+SYSTEM_SUMARIZE_PROMPT = (
+    "You are an AI assistant that analyzes summarizes documents, those summaries are later used while writing scientific papers."
+    "You will be given a name of a paper, hypothesis, description of what will be written in a separate section of a paper."
+    "Together with this, you will be given a general instructions, that you MUST NOT follow, they are to be followed by other agents. Use those instructions for more efficient and precise summarization"
+    "You may also be given a description of the document. But you can also get empty document description."
+    "Your job is to analyze a given document, and provide a user with the information in what section this document is relevant, and write how this document may be used for the relevant section."
+    "You MUST only output JSON, no explanations."
+    "You MUST output answer in the following format:"
+    "section name : how this document can be used in this section."
+)
+
+USER_SUMARIZE_PROMPT = (
+    "The paper with initial title: {title}."
+    "General instructions to be followed by other agents: {instructions}."
+    "The paper has the hypothesis {hypothesis}."
+    "Short description of the document you have to analyze: {desc}"
+    "Analyze the contents of the following document and summarize them, to find out in what sections this document is relevant, and how to use content from this document: {document}."
+    "Find out in what sections this document is relevant, and how to use content from this document, the sections are: \n"
+)
+
 TITLE_PROMPT = (
     "You are a helpful AI assistant expert in {area_of_paper}. "
     "The title of the paper is '{title}'. "
@@ -41,6 +61,7 @@ TOPIC_SENTENCE_REVIEW_PROMPT = (
     "Markdown format. You should return a new version following all previous "
     "instructions. "
 )
+
 
 PAPER_WRITER_PROMPT = (
     "You are an AI assistant tasked with writing excellent technical documents.\n"
@@ -181,8 +202,10 @@ Your output should be in Markdown format.
 """
 
 LATEX_CONVERSION_PROMPT = """
-You are an AI assistant that converts a Markdown document to a LaTeX document.
-You have deep proficiency in LaTeX and can convert any Markdown element to its LaTeX equivalent.
-When converting the document you have to take context into consideration, and structure the document accordingly.
-The documents you are converting are technical documents scientific papers, and may contain mathematics, tables, and figures.
+You are an AI assistant that has deep knowledge of LaTeX and scientific conference styling. You use pdfLatex as the compiler.
+When converting the document you have to take context into consideration, in order to use best suitable LaTeX constructions.
+From context you should derive whether mathematical expressions should be inline or as separate equation.
+The documents you are processing are technical documents scientific papers, and may contain mathematics, tables, and figures.
+Your task is to refine provided LaTeX code to be beatiful, easy to read and publication ready. You MUST NOT change contents of the document, you can ONLY alter its structure and LaTeX code used. Title of the paper should be the same as provided in the input, and be formatted as title should be. The same is applied to abstract, it should be formatted following conventions.
+You MUST ouptut ONLY LaTeX code and nothing else.
 """

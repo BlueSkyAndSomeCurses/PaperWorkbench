@@ -50,3 +50,5 @@ agents/__pycache__/*
 example/
 images/
 *__pycache__*
+.ruff_cache/
+*.pdf

@@ -1,7 +1,12 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 
 import json
+import logging
 import re
+import subprocess
+import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import List, Set, TypedDict
 
 from langchain_core.messages import (
@@ -14,6 +19,9 @@ from langchain_core.messages import (
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from src.utils.file_handlers import handle_file_reading_for_model
+from src.utils.models import AgentState, RelevantaFileApplication, RelevantFile
+
 from .gen_citations import insert_references
 from .prompts import (
     ABSTRACT_WRITER_PROMPT,
@@ -23,50 +31,73 @@ from .prompts import (
     REFERENCES_PROMPT,
     REFLECTION_REVIEWER_PROMPT,
     RESEARCH_CRITIQUE_PROMPT,
+    SYSTEM_SUMARIZE_PROMPT,
     TASK_TEMPLATE,
     TITLE_PROMPT,
     TOPIC_SENTENCE_PROMPT,
     TOPIC_SENTENCE_REVIEW_PROMPT,
+    USER_SUMARIZE_PROMPT,
     WRITER_REVIEW_PROMPT,
 )
 from .search import *
 
 
-class AgentState(TypedDict):
-    state: str
-
-    title: str
-    messages: list
-    hypothesis: str
-    area_of_paper: str
-    type_of_document: str
-    section_names: str
-    number_of_paragraphs: str
-    results: str
-    references: list[str]
-
-    # these are instructions that we save for the topic sentences
-    # and paper writing
-    review_topic_sentences: list[str]
-    review_instructions: list[str]
-
-    task: str
-    plan: str
-    draft: str
-    critique: str
-    cache: set[str]
-    content: list[str]
-    revision_number: int
-    number_of_queries: int
-    max_revisions: int
-    sentences_per_paragraph: int
-    latex_draft: str
-
-
 class State:
-    def __init__(self, model, name):
+    def __init__(self, model: ChatOpenAI, name: str) -> None:
         self.model = model
         self.name = name
+
+
+class AnalyzeRelevantFiles(State):
+    def __init__(state, model: ChatOpenAI) -> None:
+        super().__init__(model, "analyze_relevant_files")
+
+    def run(self, state: AgentState, config: dict) -> dict:
+        logging.info(f"state {self.name}, state config: {state}")
+
+        def process_file(relevant_file: RelevantFile) -> RelevantFile:
+            logging.info(relevant_file.file_path)
+            messages = [
+                SystemMessage(content=SYSTEM_SUMARIZE_PROMPT),
+                HumanMessage(
+                    content=USER_SUMARIZE_PROMPT.format(
+                        title=state.title,
+                        instructions=state.instructions,
+                        hypothesis=state.hypothesis,
+                        desc=relevant_file.description,
+                        document=handle_file_reading_for_model(relevant_file.file_path),
+                    )
+                    + "\n".join(
+                        [
+                            f"{section_name}: {desc}"
+                            for section_name, desc in state.section_names.items()
+                        ]
+                    )
+                ),
+            ]
+
+            response = self.model.invoke(
+                messages, response_format={"type": "json_object"}
+            )
+
+            json_response = json.loads(response.content)
+            for section_name, application in json_response.items():
+                relevant_file.application.append(
+                    RelevantaFileApplication(
+                        stage_name=section_name, application_desc=application
+                    )
+                )
+            return relevant_file
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [
+                executor.submit(process_file, relevant_file)
+                for relevant_file in state.relevant_files
+            ]
+
+            return {
+                "relevant_files": [future.result() for future in as_completed(futures)]
+            }
 
 
 class SuggestTitle(State):
@@ -82,11 +113,11 @@ class SuggestTitle(State):
 
         logging.info(f"state {self.name}: running")
 
-        messages = state["messages"]
+        messages = state.messages
         if not messages:
-            title = state["title"]
-            area_of_paper = state["area_of_paper"]
-            hypothesis = state["hypothesis"]
+            title = state.title
+            area_of_paper = state.area_of_paper
+            hypothesis = state.hypothesis
 
             messages = [
                 SystemMessage(
@@ -125,7 +156,7 @@ class SuggestTitleReview(State):
 
         logging.info(f"state {self.name}: running")
 
-        messages = state["messages"]
+        messages = state.messages
         instruction = config["configurable"]["instruction"]
         if not instruction:
             human_message = HumanMessage(
@@ -192,8 +223,8 @@ class InternetSearch(State):
                 number_of_paragraphs[section] for section in section_names
             ]
         sections = (
-            ", ".join([f"'{section}'" for section in section_names[:-1]])
-            + f" and '{section_names[-1]}'"
+            ", ".join([f"'{section}'" for section in list(section_names)[:-1]])
+            + f" and '{list(section_names)[-1]}'"
         )
         instruction = " ".join(
             [
@@ -204,7 +235,7 @@ class InternetSearch(State):
                     "as it will be filled later."
                 )
                 for (section, no_of_sentences) in zip(
-                    section_names, number_of_paragraphs
+                    section_names, number_of_paragraphs, strict=False
                 )
             ]
         )
@@ -229,17 +260,18 @@ class InternetSearch(State):
         """
 
         logging.info(f"state {self.name}: running")
+        logging.info(f"state {self.name}: state {state}")
 
         queries = {"queries": []}
         task = self.create_task(
-            title=state["title"],
-            hypothesis=state["hypothesis"],
-            area_of_paper=state["area_of_paper"],
-            type_of_document=state["type_of_document"],
-            section_names=state["section_names"],
-            number_of_paragraphs=state["number_of_paragraphs"],
-            results=state["results"],
-            references=state["references"],
+            title=state.title,
+            hypothesis=state.hypothesis,
+            area_of_paper=state.area_of_paper,
+            type_of_document=state.type_of_document,
+            section_names=state.section_names,
+            number_of_paragraphs=state.number_of_paragraphs,
+            results=state.results,
+            references=state.references,
         )
         for _ in range(3):  # three attempts
             result = self.model.invoke(
@@ -247,7 +279,7 @@ class InternetSearch(State):
                     SystemMessage(
                         content=(
                             INTERNET_SEARCH_PROMPT.format(
-                                number_of_queries=state["number_of_queries"]
+                                number_of_queries=state.number_of_queries
                             )
                             + " You must only output the response in a plain list of queries "
                             "in the JSON format '{ \"queries\": list[str] }' and no other text. "
@@ -256,26 +288,27 @@ class InternetSearch(State):
                         )
                     ),
                     HumanMessage(content=task),
-                ]
+                ],
+                response_format={"type": "json_object"},
             ).content
             # we need to add this because sometimes the LLM decides to put a header
             # in the json file.
             if result[:7] == "```json":
                 result = result.split("\n")
                 result = "\n".join(result[1:-1])
-            content = state.get("content", [])
+            content = state.content
             try:
                 queries = json.loads(result)
                 break
             except:
                 logging.warning(f"state {self.name}: could not extract query {result}.")
         # finally, add to the queries all references that have http
-        for ref in state["references"]:
+        for ref in state.references:
             search_match = re.search(r"http.*(\s|$)", ref)
             if search_match:
                 l, r = search_match.span()
                 http_ref = ref[l:r]
-                queries["queries"].insert(0, http_ref)
+                queries["queries"] = [http_ref, *queries["queries"]]
         if queries["queries"]:
             search, cache = search_query_ideas(query_ideas=queries, cache=set())
             content = content + search
@@ -304,20 +337,24 @@ class TopicSentenceWriter(State):
         """
 
         logging.info(f"state {self.name}: running")
-        task = state["task"]
-        content = "\n\n".join(state["content"])
-        messages = state["messages"]
+        logging.info(f"{state}")
+        task = state.task
+        content = "\n\n".join(state.content)
+        messages = state.messages
         if not messages:
             messages = [SystemMessage(content=TOPIC_SENTENCE_PROMPT)]
         messages.append(
             HumanMessage(
-                content=(
-                    f"This is the content of a search on the internet for the paper:\n\n"
-                    f"{content}\n\n"
-                    f"{task}"
-                )
+                content=f"""This is the content of a search on the internet for the paper:\n\n
+                    {content}\n\n
+                    {task}"""
             )
         )
+
+        messages = [*messages, *self._generate_document_messages(state)]
+
+        logging.info(messages)
+
         response = self.model.invoke(messages)
         plan = response.content.strip()
         if "```markdown" in plan:
@@ -331,6 +368,24 @@ class TopicSentenceWriter(State):
             plan = plan[:r]
         messages.append(AIMessage(content=plan))
         return {"state": self.name, "plan": plan, "draft": plan, "messages": messages}
+
+    def _generate_document_messages(self, state: AgentState) -> list[HumanMessage]:
+        return [
+            HumanMessage(
+                content=f"""
+                Use this content:\n,
+                {handle_file_reading_for_model(rel_file.file_path)}
+                It's concise description {rel_file.description}
+                """
+                + "\n".join(
+                    [
+                        f"Use it in section {rel_file_application.stage_name}, this document should be used in this section to {rel_file_application.application_desc}"
+                        for rel_file_application in rel_file.application
+                    ]
+                )
+            )
+            for rel_file in state.relevant_files
+        ]
 
 
 class TopicSentenceManualReview(State):
@@ -346,10 +401,10 @@ class TopicSentenceManualReview(State):
         """
 
         logging.info(f"state {self.name}: running")
-        review_topic_sentences = state.get("review_topic_sentences", [])
-        messages = state["messages"]
+        review_topic_sentences = state.review_topic_sentences
+        messages = state.messages
         instruction = config["configurable"]["instruction"]
-        plan = state["plan"]
+        plan = state.plan
         if instruction:
             review_topic_sentences.append(instruction)
             messages.extend(
@@ -357,8 +412,8 @@ class TopicSentenceManualReview(State):
                     HumanMessage(
                         content=(
                             TOPIC_SENTENCE_REVIEW_PROMPT + "\n\n"
-                            f"Here is my task:\n\n{state['task']}\n\n"
-                            f"Here is my plan:\n\n{state['plan']}\n\n"
+                            f"Here is my task:\n\n{state.task}\n\n"
+                            f"Here is my plan:\n\n{state.plan}\n\n"
                             f"Here is my instruction:\n\n{instruction}\n\n"
                             "Only return the Markdown for the new plan as output. "
                         )
@@ -398,13 +453,13 @@ class PaperWriter(State):
         """
 
         logging.info(f"state {self.name}: running")
-        content = "\n\n".join(state.get("content", []))
-        critique = state.get("critique", "")
-        review_instructions = state.get("review_instructions", [])
-        task = state["task"]
-        sentences_per_paragraph = state["sentences_per_paragraph"]
+        content = "\n\n".join(state.content)
+        critique = state.critique
+        review_instructions = state.review_instructions
+        task = state.task
+        sentences_per_paragraph = state.sentences_per_paragraph
         # if previous state is internet_search, draft are in the form of topic senteces
-        if state["state"] == "internet_search":
+        if state.state == "internet_search":
             additional_info = " in terms of topic sentences"
         else:
             additional_info = ""
@@ -412,7 +467,7 @@ class PaperWriter(State):
             "Generate a new draft of the document based on the "
             "information I gave you.\n\n"
             f"Here is my current draft{additional_info}:\n\n"
-            f"{state['draft']}\n\n"
+            f"{state.draft}\n\n"
         )
         messages = [
             SystemMessage(
@@ -438,7 +493,7 @@ class PaperWriter(State):
         return {
             "state": self.name,
             "draft": draft,
-            "revision_number": state.get("revision_number", 1) + 1,
+            "revision_number": state.revision_number + 1,
         }
 
 
@@ -454,9 +509,9 @@ class WriterManualReviewer(State):
         """
 
         logging.info(f"state {self.name}: running")
-        review_instructions = state.get("review_instructions", [])
+        review_instructions = state.review_instructions
         instruction = config["configurable"]["instruction"]
-        draft = state["draft"]
+        draft = state.draft
         if instruction:
             review_instructions.append(instruction)
             joined_instructions = "\n".join(review_instructions)
@@ -465,10 +520,10 @@ class WriterManualReviewer(State):
                 HumanMessage(
                     content=(
                         "Here is my task:\n\n"
-                        f"{state['task']}"
+                        f"{state.task}"
                         "\n\n"
                         "Here is my draft:\n\n"
-                        f"{state['draft']}"
+                        f"{state.draft}"
                         "\n\n"
                         "Here is my instruction:\n\n"
                         f"{instruction}"
@@ -510,15 +565,15 @@ class ReflectionReviewer(State):
         """
 
         logging.info(f"state {self.name}: running")
-        review_instructions = "\n".join(state.get("review_instructions", []))
+        review_instructions = "\n".join(state.review_instructions)
         messages = [
             SystemMessage(
                 content=REFLECTION_REVIEWER_PROMPT.format(
-                    hypothesis=state["hypothesis"],
+                    hypothesis=state.hypothesis,
                     review_instructions=review_instructions,
                 )
             ),
-            HumanMessage(content=state["draft"]),
+            HumanMessage(content=state.draft),
         ]
         response = self.model.invoke(messages)
         return {"state": self.name, "critique": response.content}
@@ -536,7 +591,7 @@ class ReflectionManualReview(State):
         :return: 'critique' of the paper.
         """
         additional_critique = config["configurable"]["instruction"]
-        critique = state["critique"]
+        critique = state.critique
         if additional_critique:
             critique = (
                 critique + f"\n\nAdditional User's feedback:\n{additional_critique}\n"
@@ -566,7 +621,7 @@ class ReflectionCritiqueReviewer(State):
                         + "JSON format '{ \"queries\": list[str] }' and no other text."
                     )
                 ),
-                HumanMessage(content=state["critique"]),
+                HumanMessage(content=state.critique),
             ]
         ).content
         # we need to add this because sometimes the LLM decides to put a header
@@ -578,14 +633,12 @@ class ReflectionCritiqueReviewer(State):
             queries = json.loads(result)
         except:
             logging.warning(f"state {self.name}: could not extract query {result}.")
-        content = state.get("content", [])
+        content = state.content
         if queries["queries"]:
-            search, cache = search_query_ideas(
-                query_ideas=queries, cache=state.get("cache", set())
-            )
+            search, cache = search_query_ideas(query_ideas=queries, cache=state.cache)
             content = content + search
         else:
-            cache = state.get("cache", set())
+            cache = state.cache
         return {"state": self.name, "cache": cache, "content": content}
 
 
@@ -602,10 +655,10 @@ class WriteAbstract(State):
 
         logging.info(f"state {self.name}: running")
         human_content = (
-            f"Here is my task:\n\n{state['task']}\n\n"
-            f"Here is my plan:\n\n{state['plan']}\n\n"
-            f"Here is my research content:\n\n{state['content']}"
-            f"Here is my current draft:\n\n{state['draft']}\n\n"
+            f"Here is my task:\n\n{state.task}\n\n"
+            f"Here is my plan:\n\n{state.plan}\n\n"
+            f"Here is my research content:\n\n{state.content}"
+            f"Here is my current draft:\n\n{state.draft}\n\n"
         )
         messages = [
             SystemMessage(content=ABSTRACT_WRITER_PROMPT),
@@ -630,7 +683,7 @@ class GenerateFigureCaptions(State):
         """
 
         logging.info(f"state {self.name}: running")
-        draft = state["draft"]
+        draft = state.draft
         pattern = r"!\[([^\]]*)\]\(([^\)]*)\)"
 
         # find all ![caption](file) definition of figures in markdown
@@ -663,7 +716,7 @@ class GenerateReferences(State):
         """
 
         logging.info(f"state {self.name}: running")
-        content = state["content"]
+        content = state.content
         joined_content = "\n\n".join(content)
         human_content = (
             "Generate references for the following content entries. "
@@ -695,8 +748,8 @@ class GenerateCitations(State):
         """
 
         logging.info(f"state {self.name}: running")
-        references = state["references"]
-        draft = state["draft"]
+        references = state.references
+        draft = state.draft
         draft = draft + "\n\n" + references
         draft = insert_references(draft)
         return {"state": self.name, "draft": draft}
@@ -715,16 +768,59 @@ class LaTeXConverter(State):
 
         logging.info(f"state {self.name}: running")
         logging.info(state)
-        draft = state["draft"]
+
+        latex_draft = self._pandoc_convertion(state)
+
+        logging.info(latex_draft)
 
         result = self.model.invoke(
             [
                 SystemMessage(content=(LATEX_CONVERSION_PROMPT)),
                 HumanMessage(
-                    content=f"Convert the following markdown to LaTeX:\n\n{draft}"
+                    content=f"Refine the following LaTeX document:\n\n{latex_draft} to fit {state.latex_template} style, here is the official LaTeX template: \n{self._find_latex_template(state.latex_template)}"
                 ),
             ]
         )
         logging.info(result)
 
         return {"state": self.name, "latex_draft": result.content}
+
+    def _find_latex_template(self, latex_template: str) -> str:
+        try:
+            logging.info(f"{Path.cwd()}, {latex_template.lower()}.tex")
+
+            latex_template_path = next(
+                iter(Path.cwd().rglob(f"*{latex_template.lower()}.tex"))
+            )
+            with latex_template_path.open("r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as err:
+            logging.error(f"Error occured while looking for latex template: {err}")
+            return "Use standard LaTeX template"
+
+    def _pandoc_convertion(self, state: AgentState) -> str:
+        tmp_file = "/tmp" / Path(f"{state.title}_{uuid.uuid4()}.md")
+
+        with tmp_file.open(mode="w", encoding="utf-8") as f:
+            f.write(state.draft)
+
+        pandoc_run = subprocess.run(
+            [
+                "pandoc",
+                "-s",
+                str(tmp_file),
+                "-f",
+                "markdown",
+                "-t",
+                "latex",
+                "-o",
+                str(tmp_file.with_suffix(".tex")),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        logging.info(pandoc_run)
+
+        with (tmp_file.with_suffix(".tex")).open(mode="r", encoding="utf-8") as f:
+            return f.read()

@@ -11,7 +11,9 @@ from pathlib import Path
 
 import gradio as gr
 import markdown
+import polars as pl
 import yaml
+from gradio.components.html import HTML
 from IPython.display import Image, display
 from langchain_core.runnables.graph import CurveStyle, MermaidDrawMethod
 from langchain_openai import ChatOpenAI
@@ -28,6 +30,8 @@ except ImportError:
 
 from decouple import config
 
+PREINITIALIZED_COMPONENTS = 10
+
 logging.basicConfig(level=logging.WARNING)
 
 
@@ -38,7 +42,10 @@ class DocumentWriter:
         generate_citations: bool = True,
         model_name: str = "openai",
         temperature: float = 0.0,
+        relevant_files: list[RelevantFile] | None = None,
     ) -> None:
+        if relevant_files is None:
+            relevant_files = []
         self.suggest_title = suggest_title
         self.generate_citations = generate_citations
         self.state = None
@@ -53,6 +60,7 @@ class DocumentWriter:
         self.state_nodes = {
             node.name: node
             for node in [
+                AnalyzeRelevantFiles(self.model_m),
                 SuggestTitle(self.model_m),
                 SuggestTitleReview(self.model_m),
                 InternetSearch(self.model_m),
@@ -125,7 +133,10 @@ class DocumentWriter:
             },
         )
         if self.suggest_title:
+            builder.add_edge("analyze_relevant_files", "suggest_title")
             builder.add_edge("suggest_title", "suggest_title_review")
+        else:
+            builder.add_edge("analyze_relevant_files", "internet_search")
         builder.add_edge("internet_search", "topic_sentence_writer")
         builder.add_edge("topic_sentence_writer", "topic_sentence_manual_review")
         builder.add_edge("paper_writer", "writer_manual_reviewer")
@@ -140,11 +151,7 @@ class DocumentWriter:
         builder.add_edge("generate_figure_captions", "latex_converter")
         builder.add_edge("latex_converter", END)
 
-        # Starting state is either suggest_title or planner.
-        if self.suggest_title:
-            builder.set_entry_point("suggest_title")
-        else:
-            builder.set_entry_point("internet_search")
+        builder.set_entry_point("analyze_relevant_files")
 
         self.interrupt_after = []
         self.interrupt_before = ["suggest_title_review"] if self.suggest_title else []
@@ -173,7 +180,7 @@ class DocumentWriter:
         :return: next state of agent.
         """
 
-        if not state["messages"]:
+        if not state.messages:
             return "next_phase"
         return "review_more"
 
@@ -197,7 +204,7 @@ class DocumentWriter:
         """
         if config["configurable"]["instruction"]:
             return "manual_review"
-        if state["revision_number"] <= state["max_revisions"]:
+        if state.revision_number <= state.max_revisions:
             return "reflection"
         return "finalize"
 
@@ -286,8 +293,11 @@ class KirokuUI:
         """
         with filename.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        logging.info(data)
-        cfg = PaperConfig(**data)
+        logging.info(f"Initial yaml config: {data}")
+
+        relevant_files = self._get_relevant_files(data)
+
+        cfg = PaperConfig(**data, relevant_files=relevant_files)
         cfg.hypothesis = "\n\n".join(filter(None, [cfg.hypothesis, cfg.instructions]))
 
         return cfg
@@ -363,14 +373,11 @@ class KirokuUI:
         Performs initial step, in which we need to providate a state to the graph.
         :return: draft and Echo message.
         """
-        state_values = deepcopy(self.state_values)
+        state_values = self.state_values.model_copy(deep=True)
         if self.state_values.suggest_title:
             state_values.state = "suggest_title"
         else:
             state_values.state = "topic_sentence_writer"
-        # initialize a bunch of variables users should not care about.
-        # in principle this could be initialized in the Pydantic object,
-        # but I could not make this work there.
         draft = self.step("", state_values)
         state = self.writer.get_state()
         current_state = state.values["state"]
@@ -394,6 +401,10 @@ class KirokuUI:
 
         self.state_values = self.read_initial_state(Path(filename))
 
+        logging.info(f"State values: \n\n{self.state_values}")
+
+        relevant_files_preview = self._update_files_preview()
+
         if self.state_values:
             suggest_title, generate_citations, model_name, temperature = (
                 self.state_values.suggest_title,
@@ -407,7 +418,11 @@ class KirokuUI:
                 model_name=model_name,
                 temperature=temperature,
             )
-        return self.state_values, gr.update(interactive=False)
+        return (
+            *relevant_files_preview,
+            self.state_values.model_dump_json(),
+            gr.update(interactive=False),
+        )
 
     def save_as(self):
         """
@@ -416,8 +431,6 @@ class KirokuUI:
         """
         filename = self.filename
         state = self.writer.get_state()
-
-        print(state)
 
         draft = state.values.get("draft", "")
         latex_draft = state.values.get("latex_draft", "")
@@ -467,35 +480,9 @@ class KirokuUI:
                 ]
             )
 
-            subprocess.run(
-                [
-                    "pandoc",
-                    "-s",
-                    f"{base_filename + '.md'}",
-                    "-f",
-                    "markdown",
-                    "-t",
-                    "latex",
-                    "-o",
-                    f"{base_filename + 'pandoc.tex'}",
-                ]
-            )
-            subprocess.run(
-                [
-                    "pandoc",
-                    "-s",
-                    f"{base_filename + '.md'}",
-                    "-o",
-                    f"{base_filename + '.pdf'}",
-                    "--pdf-engine=pdflatex",
-                ]
-            )
         except:
             logging.error("cannot find 'pandoc'")
 
-        # with open(base_filename + ".docx", "wb") as fp:
-        #    buf = html2docx(html, title=state.values.get("title", ""))
-        #    fp.write(buf.getvalue())
         logging.warning(f"saved file {base_filename + '.docx'}")
 
         with open(base_filename + "_ts.txt", "w") as fp:
@@ -555,9 +542,11 @@ class KirokuUI:
         with gr.Blocks(
             theme=gr.themes.Default(), fill_height=True
         ) as self.kiroku_agent:
-            with gr.Tab("Initial Instructions"), gr.Row():
-                file = gr.File(file_types=[".yaml"], scale=1)
-                js = gr.JSON(scale=5)
+            with gr.Tab("Initial Instructions"):
+                with gr.Row():
+                    file = gr.File(file_types=[".yaml"], scale=1)
+                    js = gr.JSON(scale=5)
+                _, _, files_preview = self._make_files_preview()
             with gr.Tab("Document Writing"):
                 out = gr.Textbox(label="Echo")
                 inp = gr.Textbox(placeholder="Instruction", label="Rider")
@@ -581,7 +570,7 @@ class KirokuUI:
                 [],
                 inp,
             ).then(self.update_refs, [], [submit_ref_list, *ref_list])
-            file.upload(self.process_file, file, [js, inp]).then(
+            file.upload(self.process_file, file, [*files_preview, js, inp]).then(
                 self.initial_step, [], [markdown, out]
             ).then(lambda: gr.update(placeholder="", interactive=True), [], inp)
             doc.click(self.save_as, [], out)
@@ -609,6 +598,114 @@ class KirokuUI:
         self.kiroku_agent.launch(
             server_name="localhost"
         )  # allowed_paths=[working_dir])
+
+    def _get_relevant_files(self, state_values: dict) -> list[RelevantFile]:
+        working_dir = Path(state_values["working_dir"])
+
+        if not working_dir.exists() or not working_dir.is_dir():
+            return []
+
+        file_names_and_descs = {
+            rel_file["file_name"]: rel_file.get("description", "")
+            for rel_file in state_values["files_descriptions"]
+        }
+
+        relevant_files = []
+        for file in working_dir.rglob("*"):
+            for file_name, description in file_names_and_descs.items():
+                if (
+                    file.suffix
+                    in [".yaml", ".yml", ".md", ".tex", ".html", ".csv", ".parquet"]
+                    and file.name == file_name
+                ):
+                    relevant_files.append(
+                        RelevantFile(file_path=file, description=description)
+                    )
+
+        return relevant_files
+
+    def _make_files_preview(
+        self, n_slots: int = PREINITIALIZED_COMPONENTS
+    ) -> tuple[gr.Column, dict, list]:
+        file_blocks = {"yaml": [], "markdown": [], "html": [], "table": [], "other": []}
+
+        with gr.Column() as col:
+            for i in range(n_slots):
+                file_blocks["yaml"].append(
+                    gr.Code(visible=False, label=f"yaml_{i}", language="yaml")
+                )
+                file_blocks["markdown"].append(
+                    gr.Markdown(visible=False, label=f"md_{i}")
+                )
+                file_blocks["html"].append(gr.HTML(visible=False, label=f"html_{i}"))
+                file_blocks["table"].append(
+                    gr.Dataframe(visible=False, label=f"table_{i}")
+                )
+                file_blocks["other"].append(
+                    gr.Markdown(visible=False, label=f"other_{i}")
+                )
+
+        all_components = [c for lst in file_blocks.values() for c in lst]
+        return col, file_blocks, all_components
+
+    def _update_files_preview(self) -> list:
+        relevant_files = self.state_values.relevant_files
+        updates = []
+
+        def pad(updates_list: list, n_left: int) -> list:
+            return updates_list + [
+                gr.update(visible=False) for _ in range(n_left - len(updates_list))
+            ]
+
+        yaml_updates, md_updates, html_updates, table_updates, other_updates = (
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
+
+        for rel_file in relevant_files:
+            file = rel_file.file_path
+            match file.suffix:
+                case ".yaml" | ".yml":
+                    yaml_updates.append(
+                        gr.update(value=file.read_text(), visible=True, label=file.name)
+                    )
+                case ".md" | ".tex":
+                    md_updates.append(
+                        gr.update(value=file.read_text(), visible=True, label=file.name)
+                    )
+                case ".html":
+                    html_updates.append(
+                        gr.update(value=file.read_text(), visible=True, label=file.name)
+                    )
+                case ".csv":
+                    table = pl.scan_csv(file).head(5).collect().to_pandas()
+                    table_updates.append(
+                        gr.update(value=table, visible=True, label=file.name)
+                    )
+                case ".parquet":
+                    table = pl.scan_parquet(file).head(5).collect().to_pandas()
+                    table_updates.append(
+                        gr.update(value=table, visible=True, label=file.name)
+                    )
+                case _:
+                    other_updates.append(
+                        gr.update(
+                            value=f"Unsupported file type: {file}",
+                            visible=True,
+                            label=file.name,
+                        )
+                    )
+
+        updates.extend(pad(yaml_updates, PREINITIALIZED_COMPONENTS))
+        updates.extend(pad(md_updates, PREINITIALIZED_COMPONENTS))
+        updates.extend(pad(html_updates, PREINITIALIZED_COMPONENTS))
+        updates.extend(pad(table_updates, PREINITIALIZED_COMPONENTS))
+        updates.extend(pad(other_updates, PREINITIALIZED_COMPONENTS))
+
+        return updates
 
 
 def run() -> None:

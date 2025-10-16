@@ -11,6 +11,7 @@ from typing import Any, Dict, Iterator, List
 from langchain_core.documents import Document
 from pydantic import BaseModel, model_validator
 
+
 class PubMedAPIWrapper(BaseModel):
     """
     Wrapper around PubMed API.
@@ -71,12 +72,14 @@ class PubMedAPIWrapper(BaseModel):
         try:
             # Retrieve the top-k results for the query
             docs = [
-                ", ".join([
-                    f"Published: {result['Published']}",
-                    f"Title: '{result['Title']}'",
-                    f"Authors: '" f"{', '.join(result['Authors'])}" "'",
-                    f"Summary: '{result['Summary']}'"
-                ])
+                ", ".join(
+                    [
+                        f"Published: {result['Published']}",
+                        f"Title: '{result['Title']}'",
+                        f"Authors: '{', '.join(result['Authors'])}'",
+                        f"Summary: '{result['Summary']}'",
+                    ]
+                )
                 for result in self.load(query[: self.MAX_QUERY_LENGTH])
             ]
 
