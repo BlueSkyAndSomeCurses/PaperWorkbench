@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class PaperConfig(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     # === From YAML ===
     title: str = ""
     suggest_title: bool = False
@@ -18,6 +19,9 @@ class PaperConfig(BaseModel):
     number_of_queries: int = 0
     max_revisions: int = 1
     temperature: float = 0.0
+
+    # Plot generation configuration
+    plot_data: str = ""
 
     # === From your original model ===
     sentences_per_paragraph: int = 4

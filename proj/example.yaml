@@ -17,3 +17,16 @@ instructions: |
 number_of_queries: 0
 max_revisions: 0
 temperature: 1
+
+# You can either provide a CSV file path:
+plot_data: "pythagorean_data.csv"
+# plot_data: |
+#     # Sample data for Pythagorean theorem visualization
+#     a,b,c,triangle_type
+#     3,4,5,Right Triangle
+#     5,12,13,Right Triangle
+#     8,15,17,Right Triangle
+#     7,24,25,Right Triangle
+#     20,21,29,Right Triangle
+#     3,4,6,Not Right Triangle
+#     5,8,10,Not Right Triangle

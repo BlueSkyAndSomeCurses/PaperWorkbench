@@ -4,18 +4,12 @@ import logging
 import os
 import re
 import shutil
-from langgraph.managed.base import Type
-from numpy import int16
-import pandas as pd
 import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
-
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Set
-import uuid
 
 import gradio as gr
 import matplotlib
@@ -28,10 +22,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.states import *
-from src.agents.suggest_plot import PlotSuggester
-import matplotlib.pyplot as plt
-
 from src.utils.models import PaperConfig
+import matplotlib.pyplot as plt
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -40,8 +32,6 @@ except ImportError:
 from decouple import config
 
 logging.basicConfig(level=logging.WARNING)
-
-NUM_PLOTS= 5
 
 class DocumentWriter:
     def __init__(
@@ -70,6 +60,9 @@ class DocumentWriter:
                 InternetSearch(self.model_m),
                 TopicSentenceWriter(self.model_m),
                 TopicSentenceManualReview(self.model_m),
+                PlotSuggestionAgent(self.model_m),
+                PlotApprovalAgent(self.model_m),
+                PlotGenerationAgent(self.model_m),
                 PaperWriter(self.model_m),
                 WriterManualReviewer(self.model_m),
                 ReflectionReviewer(self.model_m),
@@ -123,10 +116,22 @@ class DocumentWriter:
             self.is_plan_review_complete,
             {
                 "topic_sentence_manual_review": "topic_sentence_manual_review",
+                "plot_suggestion": "plot_suggestion",
+            },
+        )
+        
+        builder.add_conditional_edges(
+            "plot_approval",
+            self.is_plot_approval_complete,
+            {
+                "plot_approval": "plot_approval",
+                "plot_generation": "plot_generation",
                 "paper_writer": "paper_writer",
             },
         )
-
+        builder.add_edge("plot_suggestion", "plot_approval")
+        builder.add_edge("plot_generation", "paper_writer")
+        
         builder.add_conditional_edges(
             "writer_manual_reviewer",
             self.is_generate_review_complete,
@@ -165,6 +170,7 @@ class DocumentWriter:
                 "topic_sentence_manual_review",
                 "writer_manual_reviewer",
                 "additional_reflection_instructions",
+                "plot_approval",
             ]
         )
         if self.generate_citations:
@@ -198,7 +204,23 @@ class DocumentWriter:
         """
         if config["configurable"]["instruction"]:
             return "topic_sentence_manual_review"
-        return "paper_writer"
+        return "plot_suggestion"
+
+    def is_plot_approval_complete(self, state: AgentState):
+        """Check if plot approval workflow is complete."""
+        suggested_plots = state.get("suggested_plots", [])
+        if not suggested_plots:
+            return "paper_writer"
+
+        approved_plots = [p for p in suggested_plots if p.get("approved", False)]
+        if approved_plots:
+            return "plot_generation"
+
+        all_decided = all("approved" in p for p in suggested_plots)
+        if all_decided:
+            return "paper_writer"
+        else:
+            return "plot_approval"
 
     def is_generate_review_complete(self, state: AgentState, config: dict) -> str:
         """
@@ -281,17 +303,7 @@ class DocumentWriter:
             )
         )
 
-@dataclass
-class PlotVersion:
-    """Represents a generated plot version"""
-    id: str
-    figure: plt.Figure
-    code: str
-    timestamp: datetime
-    selected: bool = False
-    
-    def __hash__(self):
-        return hash(self.id)
+
 
 class KirokuUI:
     def __init__(self, working_dir: Path):
@@ -301,10 +313,6 @@ class KirokuUI:
         self.references = []
         self.state_values = PaperConfig()
         self.writer = None
-        self.plotter = None
-
-        self.plot_gallery = []
-        self.selected_plot_ids = set()
 
     def read_initial_state(self, filename: Path) -> PaperConfig:
         """
@@ -363,7 +371,26 @@ class KirokuUI:
             self.save_as()
 
         self.next_state = next_state
-        return (draft, self.atlas_message(next_state), gr.update(interactive=False))
+
+        processed_draft = self._process_images_for_gradio(draft)
+
+        plot_section_visible = (next_state == "plot_approval")
+        plot_suggestions_content = "No plot suggestions available."
+        checkbox_updates = [gr.update(visible=False)] * 5
+        
+        if plot_section_visible and hasattr(state, 'values'):
+            suggested_plots = state.values.get("suggested_plots", [])
+            if suggested_plots:
+                plot_suggestions_content = self._format_plots_for_ui(suggested_plots)
+                checkbox_updates = self._update_plot_checkboxes(suggested_plots)
+        
+        return (
+            processed_draft, 
+            self.atlas_message(next_state), 
+            gr.update(interactive=False),
+            gr.update(visible=plot_section_visible),
+            gr.update(value=plot_suggestions_content)
+        ) + tuple(checkbox_updates)
 
     def atlas_message(self, state):
         """
@@ -377,6 +404,7 @@ class KirokuUI:
             "writer_manual_reviewer": "Please suggest review instructions for the main draft.",
             "additional_reflection_instructions": "Please provide additional instructions for the overall paper review.",
             "generate_citations": "Please look at the references tab and confirm the references.",
+            "plot_approval": "Please review the suggested plots and approve or reject them. Check the suggested plots below.",
         }
 
         instruction = message.get(state, "")
@@ -406,7 +434,8 @@ class KirokuUI:
             next_state = state.next[0]
         except:
             next_state = "NONE"
-        return draft, self.atlas_message(next_state)
+        processed_draft = self._process_images_for_gradio(draft)
+        return processed_draft, self.atlas_message(next_state)
 
     def process_file(self, filename: str):
         """
@@ -435,7 +464,6 @@ class KirokuUI:
                 model_name=model_name,
                 temperature=temperature,
             )
-            self.plotter = PlotSuggester(self.writer.model_m)
 
         return self.state_values, gr.update(interactive=False)
 
@@ -453,6 +481,10 @@ class KirokuUI:
         latex_draft = state.values.get("latex_draft", "")
         # need to replace file= by empty because of gradio problem in Markdown
         draft = re.sub(r"\/?file=", "", draft)
+        
+        # Convert relative image paths to absolute paths for Gradio compatibility
+        # This helps images display during generation process
+        draft = self._process_images_for_gradio(draft)
         plan = state.values.get("plan", "")
         review_topic_sentences = "\n\n".join(
             state.values.get("review_topic_sentences", [])
@@ -464,10 +496,10 @@ class KirokuUI:
 
         dir_.mkdir(exist_ok=True, parents=True)
 
-        try:
-            (dir_ / "images").symlink_to(self.images)
-        except Exception as err:
-            logging.error(f"Error occurred while creating symlink for images {err}")
+        # Don't create symlinks on Windows - use absolute paths instead
+        # Images are already handled with absolute paths in the content
+        # No need for symlinks since we're using absolute paths in markdown
+        pass
         base_filename = str(dir_ / dir_.name)
         logging.info(f"Saving to {base_filename}")
         with open(base_filename + ".md", "w") as fp:
@@ -581,163 +613,196 @@ class KirokuUI:
         self.writer.update_state(state)
         return self.update("")
 
-    def generate_multiple_plots(self, user_data: pd.DataFrame, num_plots: int):
-        """
-        Generates multiple plot variations using LLM calls (num_plots) and adds them to gallery.
-        """
-        if self.writer is None:
-            return self._create_error_message("Please upload a YAML configuration file first")
+    def _format_plots_for_ui(self, plots: list) -> str:
+        """Format plots for display in the plot approval UI."""
+        if not plots:
+            return "No plots suggested."
         
-        try:
+        content = "## Suggested Plots\n\n"
+        for i, plot in enumerate(plots, 1):
+            status = "✅ APPROVED" if plot.get("approved") else "❌ Pending approval"
+            content += f"### Plot {i}: {plot.get('description', 'Untitled')} [{status}]\n\n"
+            content += f"**Purpose:** {plot.get('rationale', 'No rationale provided')}\n\n"
+            
+            # Show full code instead of preview
+            full_code = plot.get('code', 'No code provided')
+            content += f"**Full Code:**\n```python\n{full_code}\n```\n\n"
+        
+        content += "**Instructions:**\n"
+        content += "- Use individual checkboxes above to select which plots to approve\n"
+        content += "- Click 'Apply Individual Selections' to apply your checkbox choices\n"
+        content += "- Or use the 'Approve All' / 'Reject All' buttons for bulk actions\n"
+        content += "- Old text commands still work: 'approve 1,3,5' or 'reject 2,4'\n"
+        return content
+
+    def _handle_plot_decision(self, decision: str) -> gr.Textbox:
+        """Helper method to handle plot approval/rejection decisions."""
+        return gr.Textbox(value=decision, interactive=True)
+    
+    def _update_plot_checkboxes(self, suggested_plots: list):
+        """Update the visibility and labels of plot checkboxes."""
+        updates = []
+        for i, checkbox in enumerate(self.plot_checkboxes):
+            if i < len(suggested_plots):
+                plot = suggested_plots[i]
+                updates.append(gr.update(
+                    visible=True,
+                    label=f"✓ Plot {i+1}: {plot.get('description', 'Untitled')}",
+                    value=plot.get('approved', False)
+                ))
+            else:
+                updates.append(gr.update(visible=False))
+        return updates
+    
+    def _apply_checkbox_selections(self, *checkbox_values):
+        """Apply individual checkbox selections to plot approval."""
+        if hasattr(self, 'writer') and self.writer is not None:
             state = self.writer.get_state()
-            draft = state.values.get("draft", "")
+            suggested_plots = state.values.get("suggested_plots", [])
             
-            if not draft:
-                return self._create_error_message("No draft available yet.\nPlease generate paper content first.")
+            logging.info(f"Applying checkbox selections: {checkbox_values}")
+            logging.info(f"Found {len(suggested_plots)} suggested plots")
             
-            logging.info(f"Generating {num_plots} plot variation{'s' if num_plots!=1 else ''} in one call...")
+            # Update approval status based on checkbox values
+            for i, checkbox_value in enumerate(checkbox_values):
+                if i < len(suggested_plots):
+                    old_status = suggested_plots[i].get("approved", False)
+                    suggested_plots[i]["approved"] = bool(checkbox_value)
+                    logging.info(f"Plot {i+1}: {old_status} -> {bool(checkbox_value)}")
             
-            plot_results = []
-            for i in range(num_plots):
-                plot_results.append(self.plotter.suggest_plot(draft, user_data, num_plots=num_plots))
+            state.values["suggested_plots"] = suggested_plots
+            self.writer.update_state(state)
             
-            logging.info(f"Plot results:{plot_results}")
-
-            new_plots = []
-            for fig, code in plot_results:
-                plot_version = PlotVersion(
-                    id=str(uuid.uuid4()),
-                    figure=fig,
-                    code=code,
-                    timestamp=datetime.now(),
-                    selected=False
-                )
-                new_plots.append(plot_version)
-                self.plot_gallery.append(plot_version)
+            # Continue to next step
+            return self.update("apply individual selections")
+        return self.update("")
+    
+    def _process_images_for_gradio(self, draft: str) -> str:
+        """Process image paths in markdown to make them work better in Gradio."""
+        import re
+        import base64
+        
+        logging.info(f"Processing draft for Gradio image display, length: {len(draft)}")
+        
+        # Convert relative paths to data URIs for Gradio compatibility
+        def replace_image_path(match):
+            alt_text = match.group(1)
+            path = match.group(2).strip()
             
-            logging.info(f"Successfully generated and stored {len(new_plots)} plots.")
-            return self.render_gallery(num_plots)
-
-        except Exception as e:
-            logging.error(f"Error in generate_multiple_plots: {e}", exc_info=True)
-            return self._create_error_message(f"Critical Error: {str(e)}")
-
-    def toggle_plot_selection(self, plot_id: str):
-        """Toggle selection state of a plot"""
-        if plot_id in self.selected_plot_ids:
-            self.selected_plot_ids.remove(plot_id)
+            logging.info(f"Processing image: [{alt_text}]({path})")
+            
+            # If it's already a data URI or absolute HTTP path, leave it
+            if path.startswith(('data:', 'http:', 'https:')):
+                logging.info(f"Skipping already processed path: {path[:50]}...")
+                return match.group(0)
+            
+            # Handle different path formats
+            absolute_path = None
+            
+            # Normalize path separators first
+            normalized_path = path.replace("\\", "/")
+            
+            # Handle different path formats
+            if normalized_path.startswith("../images/"):
+                filename = normalized_path.replace("../images/", "")
+                absolute_path = os.path.join(self.working_dir, "images", filename)
+            elif normalized_path.startswith("proj/images/"):
+                filename = normalized_path.replace("proj/images/", "")
+                absolute_path = os.path.join(self.working_dir, "images", filename)
+                logging.info(f"Proj path: {filename} -> {absolute_path}")
+            elif normalized_path.startswith("images/"):
+                filename = normalized_path.replace("images/", "")
+                absolute_path = os.path.join(self.working_dir, "images", filename)
+                logging.info(f"Images path: {filename} -> {absolute_path}")
+            elif normalized_path.startswith("/images/"):
+                # Handle absolute path starting with /images/ 
+                filename = normalized_path.replace("/images/", "")
+                absolute_path = os.path.join(self.working_dir, "images", filename)
+                logging.info(f"Absolute images path: {filename} -> {absolute_path}")
+            elif os.path.isabs(path):
+                absolute_path = path
+                logging.info(f"Absolute path: {absolute_path}")
+            else:
+                absolute_path = os.path.join(self.working_dir, path)
+                logging.info(f"Generic relative path: {path} -> {absolute_path}")
+                
+                # If that doesn't work, try in images subdirectory
+                if not os.path.exists(absolute_path):
+                    absolute_path = os.path.join(self.working_dir, "images", path)
+                    logging.info(f"Trying in images subdir: {path} -> {absolute_path}")
+                    
+                # Final fallback: try just the filename in images directory
+                if not os.path.exists(absolute_path):
+                    filename_only = os.path.basename(path)
+                    absolute_path = os.path.join(self.working_dir, "images", filename_only)
+                    logging.info(f"Trying filename only: {filename_only} -> {absolute_path}")
+            
+            if absolute_path:
+                logging.info(f"Absolute path: {absolute_path}")
+                
+                # Try to convert to data URI
+                try:
+                    if os.path.exists(absolute_path):
+                        with open(absolute_path, 'rb') as img_file:
+                            img_data = img_file.read()
+                            # Determine MIME type from extension
+                            ext = os.path.splitext(absolute_path)[1].lower()
+                            mime_types = {
+                                '.png': 'image/png',
+                                '.jpg': 'image/jpeg', 
+                                '.jpeg': 'image/jpeg',
+                                '.gif': 'image/gif',
+                                '.svg': 'image/svg+xml'
+                            }
+                            mime_type = mime_types.get(ext, 'image/png')
+                            
+                            # Encode as base64 data URI
+                            b64_data = base64.b64encode(img_data).decode('utf-8')
+                            data_uri = f"data:{mime_type};base64,{b64_data}"
+                            logging.info(f"Successfully converted to data URI: {alt_text}")
+                            return f"![{alt_text}]({data_uri})"
+                    else:
+                        logging.warning(f"Image file not found: {absolute_path}")
+                        
+                except Exception as e:
+                    logging.warning(f"Failed to process image {absolute_path}: {e}")
+                
+                # Fallback: use absolute path with forward slashes
+                if os.path.exists(absolute_path):
+                    absolute_path = absolute_path.replace(os.sep, '/')
+                    logging.info(f"Using absolute path fallback: {absolute_path}")
+                    return f"![{alt_text}]({absolute_path})"
+            
+            logging.warning(f"Could not process image path: {path}")
+            return match.group(0)
+        
+        # Find and replace image references in markdown
+        image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+        
+        # Log all image matches before processing
+        matches = re.findall(image_pattern, draft)
+        if matches:
+            logging.info(f"Found {len(matches)} image references in draft:")
+            for i, (alt, path) in enumerate(matches, 1):
+                logging.info(f"  {i}: [{alt}]({path})")
         else:
-            self.selected_plot_ids.add(plot_id)
-        for plot in self.plot_gallery:
-            if plot.id == plot_id:
-                plot.selected = plot_id in self.selected_plot_ids
-                break
+            logging.info("No image references found in draft")
         
-        return self.update_selection_display()
-
-    def get_selected_plots_code(self):
-        """Get code for all selected plots"""
-        if not self.selected_plot_ids:
-            return "# No plots selected"
+        processed_draft = re.sub(image_pattern, replace_image_path, draft)
         
-        selected_plots = [p for p in self.plot_gallery if p.id in self.selected_plot_ids]
-        
-        if not selected_plots:
-            return "# No plots selected"
-        
-        code_blocks = []
-        for idx, plot in enumerate(selected_plots, 1):
-            code_blocks.append(f"# Plot {idx}\n{plot.code}")
-        
-        separator = "\n\n" + "#" + "="*70 + "\n\n"
-        return separator.join(code_blocks)
-
-    def render_gallery(self, num_plots):
-        """Render the gallery display with all plots"""
-        if not self.plot_gallery:
-            empty_updates = [gr.update(visible=False)] * num_plots*2
-            return (
-                *empty_updates,
-                "# No plots generated yet\n\nClick 'Generate Plots' to create visualizations.",
-                "Gallery: 0 plots | Selected: 0"
-            )
-        
-
-        gallery_updates = []
-        for i in range(NUM_PLOTS):
-            if i < len(self.plot_gallery):
-                plot = self.plot_gallery[i]
-                gallery_updates.extend([
-                    gr.update(value=plot.figure, visible=True),
-                    gr.update(value=plot.selected, visible=True, interactive=True, label=f"✓ Include Plot {i+1}"),  # Checkbox
-                ])
+        # Check if any processing actually occurred
+        if processed_draft != draft:
+            logging.info("Draft was modified during image processing")
+            # Log first data URI if any
+            if "data:image/" in processed_draft:
+                logging.info("Successfully converted at least one image to data URI")
             else:
-                gallery_updates.extend([
-                    gr.update(visible=False),
-                    gr.update(visible=False),
-                ])
-
+                logging.warning("No data URIs found in processed draft")
+        else:
+            logging.info("Draft was not modified during image processing")
         
-        code = self.get_selected_plots_code()
-        num_selected = len(self.selected_plot_ids)
-        status = f"Gallery: {len(self.plot_gallery)} plot(s) | ✓ Selected: {num_selected}"
-
-        return (*gallery_updates, code, status) 
-
-
-    def update_selection_display(self):
-        """Update only selection-dependent components"""
-        code = self.get_selected_plots_code()
-        num_selected = len(self.selected_plot_ids)
-        status = f"📊 Gallery: {len(self.plot_gallery)} plot(s) | ✓ Selected: {num_selected}"
-        
-        checkbox_updates = []
-        for i in range(NUM_PLOTS):  
-            if i < len(self.plot_gallery):
-                plot = self.plot_gallery[i]
-                checkbox_updates.append(gr.update(value=plot.selected))
-            else:
-                checkbox_updates.append(gr.update())
-        
-        return (*checkbox_updates, code, status)
-
-    def _create_error_message(self, message: str):
-        """Create error display"""
-        fig, ax = plt.subplots(figsize=(6, 4))
-        ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=11)
-        ax.axis('off')
-        
-        # Return for NUM_PLOTS * 2 components (image + checkbox for each)
-        error_updates = [
-            gr.update(value=fig if i == 0 else None, visible=i == 0) 
-            for i in range(NUM_PLOTS * 2)
-        ]
-        
-        return (
-            *error_updates,
-            f"# Error\n{message}",
-            f"Error: {message}"
-        )
-
-
-    def handle_checkbox_change(self, slot_idx: int, is_checked: bool):
-        """
-        Handle checkbox state change.
-        When a checkbox is clicked, toggle the selection of that plot.
-        """
-        if slot_idx < len(self.plot_gallery):
-            plot = self.plot_gallery[slot_idx]
-            if is_checked and plot.id not in self.selected_plot_ids:
-                self.selected_plot_ids.add(plot.id)
-                plot.selected = True
-            elif not is_checked and plot.id in self.selected_plot_ids:
-                self.selected_plot_ids.remove(plot.id)
-                plot.selected = False
-            
-            logging.info(f"Plot {slot_idx+1} {'selected' if is_checked else 'deselected'}")
-        
-        return self.update_selection_display()
-
+        logging.info(f"Finished processing images for Gradio")
+        return processed_draft
 
     def create_ui(self) -> None:
         with gr.Blocks(
@@ -750,6 +815,27 @@ class KirokuUI:
                 out = gr.Textbox(label="Echo")
                 inp = gr.Textbox(placeholder="Instruction", label="Rider")
                 markdown = gr.Markdown("")
+                
+                with gr.Group(visible=False) as self.plot_approval_section:
+                    gr.Markdown("### Plot Suggestions")
+                    self.plot_suggestions_display = gr.Markdown("No plot suggestions available.")
+
+                    with gr.Column() as self.plot_checkboxes_section:
+                        self.plot_checkboxes = []
+                        for i in range(5):
+                            checkbox = gr.Checkbox(
+                                label=f"Plot {i+1}",
+                                value=False,
+                                visible=False,
+                                interactive=True
+                            )
+                            self.plot_checkboxes.append(checkbox)
+                    
+                    with gr.Row():
+                        approve_plots_btn = gr.Button("✓ Approve All Plots", variant="primary")
+                        reject_plots_btn = gr.Button("✗ Reject All Plots", variant="secondary")
+                        apply_checkboxes_btn = gr.Button("Apply Individual Selections", variant="secondary")
+                
                 doc = gr.Button("Save")
             with gr.Tab("References") as self.ref_block:
                 ref_list = [
@@ -760,60 +846,9 @@ class KirokuUI:
                 ]
                 submit_ref_list = gr.Button("Submit", visible=False)
 
-            plot_components = []
-            plot_imgs = []
-            plot_checkboxes = []
-            with gr.Tab("Plot Suggestion") as self.plottab:
-                with gr.Row():
-                    with gr.Column():
-                        gr.Markdown("### Plot Generator")
-                        data_input = gr.Dataframe(
-                            label="Example Data (optional - paste first few rows)",
-                            datatype="str",
-                        )
-                    with gr.Column():
-                        gr.Markdown("### Controls")
-                        num_plots_slider = gr.Slider(
-                            minimum=1, maximum=5, value=NUM_PLOTS, step=1, 
-                            label="Number of plot variations to generate"
-                        ) 
-                        generate_btn = gr.Button("Generate Plots", variant="primary", size="lg")
+
                 
-                with gr.Row():
-                    for i in range(5):
-                        with gr.Column():
-                            with gr.Group():
-                                plot_img = gr.Plot(label=f"Plot {i+1}", visible=False)
-                                plot_checkbox = gr.Checkbox(
-                                    label="✓ Select for paper",
-                                    value=False,
-                                    visible=False,
-                                    interactive=True
-                                )
-                                
-                                plot_imgs.append(plot_img)
-                                plot_checkboxes.append(plot_checkbox)
-                                plot_components.extend([plot_img, plot_checkbox]) 
-                selected_code = gr.Code(
-                    label="Python code for selected plots",
-                    language="python",
-                    lines=20,
-                    value="# No plots selected"
-                )
-                status_text = gr.Textbox(label="Status", value="Ready to generate plots", interactive=False)
-                generate_btn.click(
-                    self.generate_multiple_plots,
-                    inputs=[data_input, num_plots_slider],
-                    outputs=[*plot_components, selected_code, status_text]
-                )
-                for idx, checkbox in enumerate(plot_checkboxes):
-                    checkbox.change(
-                        lambda is_checked, slot_idx=idx: self.handle_checkbox_change(slot_idx, is_checked),
-                        inputs=[checkbox],
-                        outputs=[*plot_checkboxes, selected_code, status_text]
-                    )
-                
-            inp.submit(self.update, inp, [markdown, out, inp]).then(
+            inp.submit(self.update, inp, [markdown, out, inp, self.plot_approval_section, self.plot_suggestions_display] + self.plot_checkboxes).then(
                 lambda: gr.update(
                     value="",
                     interactive=self.next_state
@@ -829,6 +864,19 @@ class KirokuUI:
             submit_ref_list.click(
                 self.submit_ref_list, ref_list, [markdown, out, submit_ref_list]
             )
+            approve_plots_btn.click(
+                lambda: self._handle_plot_decision("approve all"),
+                outputs=[inp]
+            )
+            reject_plots_btn.click(
+                lambda: self._handle_plot_decision("reject all"),
+                outputs=[inp]
+            )
+            apply_checkboxes_btn.click(
+                self._apply_checkbox_selections,
+                inputs=self.plot_checkboxes,
+                outputs=[markdown, out, inp, self.plot_approval_section, self.plot_suggestions_display] + self.plot_checkboxes
+            )
 
     def launch_ui(self):
         logging.warning(
@@ -838,35 +886,32 @@ class KirokuUI:
             os.chdir(self.working_dir)
         except Exception as err:
             logging.warning(f"... directory {self.working_dir} does not exist, {err}")
-            self.working_dir.mkdir(exist_ok=True, parents=True)
+        
         self.images = self.working_dir / "images"
-        logging.warning(
-            f"... using directory {self.working_dir}/images to store images"
-        )
-        try:
-            self.images.mkdir(exist_ok=True, parents=True)
-        except Exception as err:
-            logging.error(f"Error occurred while creating images directory, {err}")
-        self.kiroku_agent.launch(
-            server_name="localhost"
-        )
+        self.images.mkdir(parents=True, exist_ok=True)
+        
+        # Create and launch the UI
+        self.create_ui()
+        self.kiroku_agent.launch()
 
-def run() -> None:
-    working_dir: Path = config(
-        "KIROKU_PROJECT_DIRECTORY", default=Path.cwd(), cast=Path
-    )
-    # need this to allow images to be in a different directory
-    gr.set_static_paths(paths=[working_dir / "images"])
-    kiroku = KirokuUI(working_dir)
-    kiroku.create_ui()
-    kiroku.launch_ui()
+
+def run():
+    """Main entry point for the application."""
+    import os
+    from pathlib import Path
+    
+    # Get working directory from environment variable or use current directory
+    working_dir = Path(os.environ.get("KIROKU_PROJECT_DIRECTORY", "."))
+    
+    # Create and launch the UI
+    ui = KirokuUI(working_dir)
+    ui.launch_ui()
 
 
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-        force=True,
     )
+
     run()
