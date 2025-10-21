@@ -1,26 +1,9 @@
-![kiroku](https://github.com/user-attachments/assets/0a254a3d-2358-40dc-91c1-ff16fa09c6f4)
- 
 # Introduction
 
-Kiroku is a multi-agent system that helps you organize and write documents.  
-
-I started writing it because during my PhD at Stanford, I had to go through a formal process to write papers and eventually the thesis, and I tried to follow these steps. 
-The difference is that at that time, I was the student, and my advisor was reviewing my documents, and I got the idea: what if the writer becomes the advisor, and the 
-multi-agent system becomes the student?
-
-This flow has several advantages:
-- It helps you organize the ideas in a better way because you can generate a sequence of paragraphs very quickly.
-- It helps you change your communication through iterative evaluation of the message
-- Recently, [<a href="#1">1</a>] suggested that LLMs help you can help complex topics by discussing with with the LLM.
+It is a multi-agent system that helps you organize and write documents.  
 
 ![AdvisorPicture](https://github.com/user-attachments/assets/dbbed542-4d24-4af2-bf83-3d6fc5113c4f)
 (c) PhDCommics (www.phdcommics.com) of the advisor and the student
-
-The original code was obtained from a short course From Harrison Chase and Rotem Weiss [<a href="#2">2</a>], 
-but I believe not even the prompts resemble any of the prompts from original prompts. However, I do recognize and
-credit to them the original code that I used as a reference.
-
-![image](https://github.com/user-attachments/assets/d5212215-4eb9-4198-a3b4-4ea0b8f7f249)
 
 # Before You Run
 
@@ -42,7 +25,6 @@ Kiroku supports Python between versions 3.7 and 3.11.
 You can use Python’s `venv` module to create an isolated environment for dependencies. This ensures a clean environment and avoids conflicts with system packages.
 
 ```shell
-cd kiroku
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -176,8 +158,7 @@ Because of a limitation of Gradio, you need to specify images as `'/file=images/
 I recommend running writer as:
 
 ```shell
-cd {where Kiroku directory is located}
-KIROKU_PROJECT_DIRECTORY=`pwd`/proj ./kiroku
+python -m src.kiroku_app
 ```
 
 Go to your preferred browser and open `localhost:7860`.
@@ -189,10 +170,6 @@ Whenever you give an instructions you really liked, remember to add it to the `i
 # License
 
 Apache License 2.0 (see LICENSE.txt)
-
-# Bugs
-
-:-)
 
 # References
 
