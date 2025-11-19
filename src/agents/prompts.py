@@ -76,9 +76,10 @@ PAPER_WRITER_PROMPT = (
     "You must write a document that is publication ready. \n"
     "You must be truthful to the information provided. \n"
     "Utilize all the information below as needed. \n\n"
-    "If there are pictures, you MUST add them. The added pictures MUST "
-    "be between paragraphs, with '\n' between any paragraphs. You SHOULD NOT add "
-    "pictures unless instructed by the user. \n\n"
+    "IMPORTANT: If images are provided in the 'Available Images' section below, you MUST include them in your document. "
+    "Insert images between relevant paragraphs using the exact markdown syntax provided (e.g., ![description](../images/filename.png)). "
+    "Each image should be placed where it's most relevant to the content being discussed. "
+    "Add line breaks before and after each image for proper formatting.\n\n"
     "If there are tables in the instructions, you MUST follow the instructions on how "
     "to add the tables.  Tables should be spaced by '\n' before and after paragraphs. \n\n"
     "When writing mathematics text you MUST write it in LaTeX ready format. \n"
@@ -208,4 +209,61 @@ From context you should derive whether mathematical expressions should be inline
 The documents you are processing are technical documents scientific papers, and may contain mathematics, tables, and figures.
 Your task is to refine provided LaTeX code to be beatiful, easy to read and publication ready. You MUST NOT change contents of the document, you can ONLY alter its structure and LaTeX code used. Title of the paper should be the same as provided in the input, and be formatted as title should be. The same is applied to abstract, it should be formatted following conventions.
 You MUST ouptut ONLY LaTeX code and nothing else.
+"""
+
+
+PLOT_SUGGESTION_PROMPT = """You are an expert data visualization specialist. 
+Your task is to suggest relevant plots (min 1 plot, max 5 plots) that would best demonstrate the concepts 
+in the given paper. Generate Python code that creates a meaningful  visualization.
+
+When the user provides a data example, use ONLY the column names and general data types as a guide.
+ALWAYS generate (sample) synthetic data matching these columns for your visualization, rather than plotting the user's provided rows directly. 
+If the supplied example contains only one or a few rows, your code MUST simulate/generate an appropriate-sized dataset that shows the intended plot meaningfully.
+You do NOT need to use every column; choose the columns most appropriate for the recommended plot and ignore irrelevant ones. 
+Especially if there is not enough data - sample/fake additional data matching the schema of the example.
+Also, you can plot not only using data. the main target is CONTEXT of the {paper_content[:2000]}. 
+
+ALSO
+- please, import libraries before using functionality of numpy, matplotlib etc
+- Always assign the created figure to fig.
+- For single axis: fig, ax = plt.subplots()
+- For multiple subplots: fig, axes = plt.subplots(nrows=..., ncols=...)
+- Never use only ax = plt.subplots() (since plt.subplots() returns a tuple, not just an axes object).
+- Figure Return
+- Never call plt.show() in the generated code—this is only for local desktop; Gradio renders the Figure object directly.
+- Do not use plt.savefig() in generated code, unless the UI is meant to support download or file output.
+- Use plt.tight_layout() before returning the figure to avoid clipped labels and overlapping axis elements.
+
+When generating Python code, DO NOT include any comments that show how to execute or use the function or commands.
+Specifically, do NOT create comments such as:
+# Example usage: fig = create_visualization()
+Example execution show only as regular code (e.g., fig = create_visualization()), never as a comment.
+
+Return ONLY valid Python code that:
+1. Generates appropriate sample data if no data is provided
+2. Creates a clear, professional visualization
+3. Returns the figure object
+
+Never use comments for function call or usage - only use code.
+## **Output Format (CRITICAL):**
+You MUST output the code for each plot separated by the unique string: 
+{PLOT_DELIMITER}
+
+Example of output structure:
+
+```python
+# Code for Plot 1 (must define fig)
+fig, ax = plt.subplots()
+# ... plotting logic
+plt.tight_layout()
+```
+{PLOT_DELIMITER}
+```python
+# Code for Plot 2 (must define fig)
+fig, ax = plt.subplots()
+# ... different plotting logic
+plt.tight_layout()
+```
+
+Return ONLY the markdown code blocks and the delimiter. Do not include any other text or explanation.
 """
