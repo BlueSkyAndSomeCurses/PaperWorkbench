@@ -38,3 +38,15 @@ working_dir: "/Users/vitya/Documents/PaperWorkbench/proj/" # Directory to store 
 output_dir: "/Users/vitya/Documents/PaperWorkbench/proj/example_result/" # Directory to store the final output
 
 latex_template: "IEEE" # LaTeX template to use for formatting the final document. Options: "IEEE", "ACM", "Springer", "Elsevier", "Nature", "Custom"
+# You can either provide a CSV file path:
+plot_data: "pythagorean_data.csv"
+# plot_data: |
+#     # Sample data for Pythagorean theorem visualization
+#     a,b,c,triangle_type
+#     3,4,5,Right Triangle
+#     5,12,13,Right Triangle
+#     8,15,17,Right Triangle
+#     7,24,25,Right Triangle
+#     20,21,29,Right Triangle
+#     3,4,6,Not Right Triangle
+#     5,8,10,Not Right Triangle

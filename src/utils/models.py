@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class RelevantaFileApplication(BaseModel):
@@ -16,6 +16,7 @@ class RelevantFile(BaseModel):
 
 
 class PaperConfig(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     # === From YAML ===
     title: str = ""
     suggest_title: bool = False
@@ -35,6 +36,7 @@ class PaperConfig(BaseModel):
 
     working_dir: Path = Path()
     output_dir: Path = Path()
+    plot_data: str = ""
 
     # === From your original model ===
     sentences_per_paragraph: int = 4

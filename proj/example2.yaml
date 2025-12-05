@@ -1,0 +1,26 @@
+title: "Feature Importance Visualization in ML"
+suggest_title: True
+generate_citations: True
+model_name: "gpt-5-nano"
+type_of_document: "Short communication"
+area_of_paper: "Data Science"
+section_names:
+    - Introduction
+    - Visualization Methods
+    - Experimental Results
+number_of_paragraphs:
+    "Introduction": 1
+    "Visualization Methods": 1
+    "Experimental Results": 1
+hypothesis: "Visualizing feature importances helps interpret black-box ML models."
+instructions: |
+    In 'Visualization Methods', describe the strengths of bar plots and violin plots.
+    In 'Experimental Results', include two figures: (1) feature importances as a horizontal bar plot, (2) SHAP value distributions as a violin plot.
+    Use the sample data for plots below.
+example_data_columns:
+    - feature
+    - importance
+    - shap_value
+number_of_queries: 0
+max_revisions: 0
+temperature: 1
