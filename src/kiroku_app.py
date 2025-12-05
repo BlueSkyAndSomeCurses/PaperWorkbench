@@ -268,13 +268,11 @@ class DocumentWriter:
         self.thread_id = str(thread_id)
 
     def draw(self):
-        display(
-            Image(
-                self.graph.get_graph().draw_mermaid_png(
-                    draw_method=MermaidDrawMethod.API
-                )
-            )
-        )
+        img = self.graph.get_graph().draw_mermaid_png(draw_method=MermaidDrawMethod.API)
+        display(Image(img))
+
+        with open("kiroku_graph.png", "wb") as f:
+            f.write(img)
 
 
 class KirokuUI:
