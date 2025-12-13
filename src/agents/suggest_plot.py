@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 import numpy as np
 from typing import Tuple, Optional, List
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -207,7 +207,6 @@ class PlotSuggester:
             'matplotlib': matplotlib,
             'plt': plt,
             'pd': pd,
-            'sns': sns,
             'np': np,
             'data': data,
             '__builtins__': {
