@@ -22,7 +22,7 @@ def extract_table_data(file_path: Path) -> tuple[str, dict, str]:
         return (
             lazy_table.head(6).collect().to_init_repr(),
             lazy_table.collect_schema().to_python(),
-            lazy_table.select(pl.all().approx_n_unique()).collect().to_init_repr(),
+            lazy_table.select(pl.len()).collect().to_init_repr(),
         )
 
     return "Unsupported table type", {}, "Unsupported table type"
