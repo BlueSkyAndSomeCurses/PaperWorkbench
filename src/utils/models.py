@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import TypedDict
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -13,6 +12,28 @@ class RelevantFile(BaseModel):
     file_path: Path = Path()
     description: str = ""
     application: list[RelevantaFileApplication] = []
+
+
+class PlotSuggestion(BaseModel):
+    id: str
+    description: str = "Untitled"
+    code: str = "print('Hello world!')"
+    rationale: str = "No rationale provided"
+    approved: bool = False
+    filename_base: Path = Path("plot_path")
+
+
+class GeneratedPlotImage(BaseModel):
+    path: str
+    relative_path: str
+    description: str
+    rationale: str
+
+
+class WorkflowLog(BaseModel):
+    step: str = "Unknown step"
+    side: str = "Below"
+    message: str = "Dummy message"
 
 
 class PaperConfig(BaseModel):
@@ -51,6 +72,8 @@ class PaperConfig(BaseModel):
 
     latex_template: str = "IEEE"
 
+    workflow_logs: list[WorkflowLog] = []
+
 
 class AgentState(PaperConfig):
     task: str = ""
@@ -59,3 +82,5 @@ class AgentState(PaperConfig):
     cache: set = set()
     content: list = []
     latex_draft: str = ""
+    suggested_plots: list[PlotSuggestion] = []
+    generated_plot_images: list[GeneratedPlotImage] = []

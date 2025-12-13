@@ -27,12 +27,13 @@ files_descriptions: # file is considered only if its name is mention here
       description: "An image showing a right triangle with squares on each side to illustrate the Pythagorean theorem. To be used in introduction section"
     - file_name: "train.csv"
       description: "A CSV file containing training data for a machine learning model. To be used in for plots in introduction section" # summary of the document, once provided model won't provide any
+    - file_name: "pythagorean_triangles.csv"
       # However, model will summarize for itself and write a list of sections where the document is relevant, together with how to use it for the specific section.
-    - file_name: "example.html"
-    - file_name: "example.tex"
-      description: "This file contains the derivation of the main formula"
-    - file_name: "example_plan.md"
-    - file_name: "some_info.yml"
+    # - file_name: "example.html"
+    # - file_name: "example.tex"
+    #   description: "This file contains the derivation of the main formula"
+    # - file_name: "example_plan.md"
+    # - file_name: "some_info.yml"
 
 working_dir: "/Users/vitya/Documents/PaperWorkbench/proj/" # Directory to store all the drafts
 output_dir: "/Users/vitya/Documents/PaperWorkbench/proj/example_result/" # Directory to store the final output

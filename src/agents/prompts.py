@@ -174,6 +174,69 @@ You should use the critique to generate the queries, but focusing on the \
 hypothesis and draft only. Only generate 3 queries max.
 """
 
+PLOT_SUGGESTION_REQUEST_TEMPLATE = """
+Based on the following paper plan and research content, suggest 3-5 plots that would enhance this paper.
+
+Paper Plan:
+{plan}
+
+Research Content:
+{content_preview}
+
+{data_context}
+
+This data has the following description:
+{description_of_data}
+
+Here is the naming of a section within the paper with possible application of this document, use can use those guidelines while suggesting plots, even though you are not limited to them:
+{section_application_mapping}
+
+Task Context:
+{task}
+
+For each plot suggestion, provide the following format:
+
+PLOT 1:
+Description: [Brief description of what the plot shows]
+Rationale: [Why this plot is useful for the paper]
+Code:
+```python
+[Python matplotlib/seaborn code to generate the plot]
+```
+
+PLOT 2:
+Description: [Brief description]
+Rationale: [Why useful]
+Code:
+```python
+[Python code]
+```
+
+Continue for 3-5 plots total. Generate plots that are relevant to the paper's topic and would provide valuable visual insights.
+"""
+
+PLOT_DATA_CONTEXT_FILE_TEMPLATE = """
+Available Data (from {plot_path}):
+{data_preview}
+
+Data columns: {columns}
+Data shape: {shape}
+
+Note: The CSV file will be available as '{filename}' and also loaded as variable 'data' in your plotting code.
+You can use: data = pd.read_csv('{filename}')
+"""
+
+PLOT_DATA_CONTEXT_INLINE_TEMPLATE = """
+Available Data:
+{data_preview}
+
+Data columns: {columns}
+Data shape: {shape}
+
+Note: The CSV data will be available as 'data.csv' and also loaded as variable 'data' in your plotting code.
+You can use: data = pd.read_csv('data.csv')
+"""
+
 ABSTRACT_WRITER_PROMPT = """
 You are an AI assistant that analyzes a text and writes an 'Abstract' section \
 with 200 words or less after the title and before the first section of the paper. \
@@ -214,14 +277,13 @@ You MUST ouptut ONLY LaTeX code and nothing else.
 
 PLOT_SUGGESTION_PROMPT = """You are an expert data visualization specialist. 
 Your task is to suggest relevant plots (min 1 plot, max 5 plots) that would best demonstrate the concepts 
-in the given paper. Generate Python code that creates a meaningful  visualization.
+in the given paper. Generate Python code that creates a meaningful visualization.
 
 When the user provides a data example, use ONLY the column names and general data types as a guide.
 ALWAYS generate (sample) synthetic data matching these columns for your visualization, rather than plotting the user's provided rows directly. 
 If the supplied example contains only one or a few rows, your code MUST simulate/generate an appropriate-sized dataset that shows the intended plot meaningfully.
 You do NOT need to use every column; choose the columns most appropriate for the recommended plot and ignore irrelevant ones. 
-Especially if there is not enough data - sample/fake additional data matching the schema of the example.
-Also, you can plot not only using data. the main target is CONTEXT of the {paper_content[:2000]}. 
+If no data is provided, infer a reasonable dataset that fits the paper's topic.
 
 ALSO
 - please, import libraries before using functionality of numpy, matplotlib etc
@@ -245,11 +307,7 @@ Return ONLY valid Python code that:
 3. Returns the figure object
 
 Never use comments for function call or usage - only use code.
-## **Output Format (CRITICAL):**
-You MUST output the code for each plot separated by the unique string: 
-{PLOT_DELIMITER}
-
-Example of output structure:
+Use the following output structure, separating each plot with the delimiter line '------':
 
 ```python
 # Code for Plot 1 (must define fig)
@@ -257,7 +315,7 @@ fig, ax = plt.subplots()
 # ... plotting logic
 plt.tight_layout()
 ```
-{PLOT_DELIMITER}
+------
 ```python
 # Code for Plot 2 (must define fig)
 fig, ax = plt.subplots()

@@ -6,14 +6,15 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 import gradio as gr
-import matplotlib
 import markdown
+import matplotlib.pyplot as plt
 import polars as pl
 import yaml
 from gradio.components.html import HTML
@@ -25,7 +26,7 @@ from langgraph.graph import END, START, StateGraph
 
 from src.agents.states import *
 from src.utils.models import PaperConfig
-import matplotlib.pyplot as plt
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -33,11 +34,14 @@ except ImportError:
 
 from decouple import config
 
-PREINITIALIZED_COMPONENTS = 10
+from src.utils.constants import SUPPORTED_TABLE_FORMATS
 
-logging.basicConfig(level=logging.WARNING)
+PREINITIALIZED_COMPONENTS = 100
+
 
 class DocumentWriter:
+    NODE_SUFFIX = "_graph_state"
+
     def __init__(
         self,
         suggest_title: bool = False,
@@ -55,9 +59,7 @@ class DocumentWriter:
 
         # TODO make models configurable for different tasks
         self.model_m = ChatOpenAI(
-            model=model_name,
-            temperature=temperature,
-            openai_api_key=config("OPENAI_API_KEY"),
+            model=model_name, temperature=temperature, api_key=config("OPENAI_API_KEY")
         )
         self.state_nodes = {
             node.name: node
@@ -91,10 +93,14 @@ class DocumentWriter:
         :param name: name of the node.
         :return: True if we keep nodes, False otherwise
         """
-        if name in ["suggest_title", "suggest_title_review"] and not self.suggest_title:
+        base_name = name.removesuffix(self.NODE_SUFFIX)
+        if (
+            base_name in ["suggest_title", "suggest_title_review"]
+            and not self.suggest_title
+        ):
             return False
         return not (
-            name in ["generate_references", "generate_citations"]
+            base_name in ["generate_references", "generate_citations"]
             and not self.generate_citations
         )
 
@@ -115,73 +121,106 @@ class DocumentWriter:
         # Add edges to the graph
         if self.suggest_title:
             builder.add_conditional_edges(
-                "suggest_title_review",
+                "suggest_title_review_graph_state",
                 self.is_title_review_complete,
-                {"next_phase": "internet_search", "review_more": "suggest_title"},
+                {
+                    "next_phase": "internet_search_graph_state",
+                    "review_more": "suggest_title_graph_state",
+                },
             )
         builder.add_conditional_edges(
-            "topic_sentence_manual_review",
+            "topic_sentence_manual_review_graph_state",
             self.is_plan_review_complete,
             {
-                "topic_sentence_manual_review": "topic_sentence_manual_review",
-                "plot_suggestion": "plot_suggestion",
+                "topic_sentence_manual_review_graph_state": "topic_sentence_manual_review_graph_state",
+                "plot_suggestion_graph_state": "plot_suggestion_graph_state",
             },
         )
-        
+
         builder.add_conditional_edges(
-            "plot_approval",
+            "plot_approval_graph_state",
             self.is_plot_approval_complete,
             {
-                "plot_approval": "plot_approval",
-                "plot_generation": "plot_generation",
-                "paper_writer": "paper_writer",
+                "plot_approval_graph_state": "plot_approval_graph_state",
+                "plot_generation_graph_state": "plot_generation_graph_state",
+                "paper_writer_graph_state": "paper_writer_graph_state",
             },
         )
-        builder.add_edge("plot_suggestion", "plot_approval")
-        builder.add_edge("plot_generation", "paper_writer")
-        
+        builder.add_edge("plot_suggestion_graph_state", "plot_approval_graph_state")
+        builder.add_edge("plot_generation_graph_state", "paper_writer_graph_state")
+
         builder.add_conditional_edges(
-            "writer_manual_reviewer",
+            "writer_manual_reviewer_graph_state",
             self.is_generate_review_complete,
             {
-                "manual_review": "writer_manual_reviewer",
-                "reflection": "reflection_reviewer",
-                "finalize": "write_abstract",
+                "writer_manual_reviewer_graph_state": "writer_manual_reviewer_graph_state",
+                "reflection_reviewer_graph_state": "reflection_reviewer_graph_state",
+                "write_abstract_graph_state": "write_abstract_graph_state",
             },
         )
         if self.suggest_title:
-            builder.add_edge("analyze_relevant_files", "suggest_title")
-            builder.add_edge("suggest_title", "suggest_title_review")
+            builder.add_edge(
+                "analyze_relevant_files_graph_state", "suggest_title_graph_state"
+            )
+            builder.add_edge(
+                "suggest_title_graph_state", "suggest_title_review_graph_state"
+            )
         else:
-            builder.add_edge("analyze_relevant_files", "internet_search")
-        builder.add_edge("internet_search", "topic_sentence_writer")
-        builder.add_edge("topic_sentence_writer", "topic_sentence_manual_review")
-        builder.add_edge("paper_writer", "writer_manual_reviewer")
-        builder.add_edge("reflection_reviewer", "additional_reflection_instructions")
-        builder.add_edge("additional_reflection_instructions", "paper_writer")
+            builder.add_edge(
+                "analyze_relevant_files_graph_state", "internet_search_graph_state"
+            )
+        builder.add_edge(
+            "internet_search_graph_state", "topic_sentence_writer_graph_state"
+        )
+        builder.add_edge(
+            "topic_sentence_writer_graph_state",
+            "topic_sentence_manual_review_graph_state",
+        )
+        builder.add_edge(
+            "paper_writer_graph_state", "writer_manual_reviewer_graph_state"
+        )
+        builder.add_edge(
+            "reflection_reviewer_graph_state",
+            "additional_reflection_instructions_graph_state",
+        )
+        builder.add_edge(
+            "additional_reflection_instructions_graph_state", "paper_writer_graph_state"
+        )
         if self.generate_citations:
-            builder.add_edge("write_abstract", "generate_references")
-            builder.add_edge("generate_references", "generate_citations")
-            builder.add_edge("generate_citations", "generate_figure_captions")
+            builder.add_edge(
+                "write_abstract_graph_state", "generate_references_graph_state"
+            )
+            builder.add_edge(
+                "generate_references_graph_state", "generate_citations_graph_state"
+            )
+            builder.add_edge(
+                "generate_citations_graph_state", "generate_figure_captions_graph_state"
+            )
         else:
-            builder.add_edge("write_abstract", "generate_figure_captions")
-        builder.add_edge("generate_figure_captions", "latex_converter")
-        builder.add_edge("latex_converter", END)
+            builder.add_edge(
+                "write_abstract_graph_state", "generate_figure_captions_graph_state"
+            )
+        builder.add_edge(
+            "generate_figure_captions_graph_state", "latex_converter_graph_state"
+        )
+        builder.add_edge("latex_converter_graph_state", END)
 
-        builder.set_entry_point("analyze_relevant_files")
+        builder.set_entry_point("analyze_relevant_files_graph_state")
 
         self.interrupt_after = []
-        self.interrupt_before = ["suggest_title_review"] if self.suggest_title else []
+        self.interrupt_before = (
+            ["suggest_title_review_graph_state"] if self.suggest_title else []
+        )
         self.interrupt_before.extend(
             [
-                "topic_sentence_manual_review",
-                "writer_manual_reviewer",
-                "additional_reflection_instructions",
-                "plot_approval",
+                "topic_sentence_manual_review_graph_state",
+                "writer_manual_reviewer_graph_state",
+                "additional_reflection_instructions_graph_state",
+                "plot_approval_graph_state",
             ]
         )
         if self.generate_citations:
-            self.interrupt_before.append("generate_citations")
+            self.interrupt_before.append("generate_citations_graph_state")
         # Build graph
         self.graph = builder.compile(
             checkpointer=memory,
@@ -210,24 +249,24 @@ class DocumentWriter:
         :return: next state of agent.
         """
         if config["configurable"]["instruction"]:
-            return "topic_sentence_manual_review"
-        return "plot_suggestion"
+            return "topic_sentence_manual_review_graph_state"
+        return "plot_suggestion_graph_state"
 
     def is_plot_approval_complete(self, state: AgentState):
         """Check if plot approval workflow is complete."""
-        suggested_plots = state.get("suggested_plots", [])
+        suggested_plots = getattr(state, "suggested_plots", [])
         if not suggested_plots:
-            return "paper_writer"
+            return "paper_writer_graph_state"
 
-        approved_plots = [p for p in suggested_plots if p.get("approved", False)]
+        approved_plots = [p for p in suggested_plots if p.approved]
         if approved_plots:
-            return "plot_generation"
+            return "plot_generation_graph_state"
 
         all_decided = all("approved" in p for p in suggested_plots)
         if all_decided:
-            return "paper_writer"
+            return "paper_writer_graph_state"
         else:
-            return "plot_approval"
+            return "plot_approval_graph_state"
 
     def is_generate_review_complete(self, state: AgentState, config: dict) -> str:
         """
@@ -237,10 +276,10 @@ class DocumentWriter:
         :return: next state to go.
         """
         if config["configurable"]["instruction"]:
-            return "manual_review"
+            return "writer_manual_review_graph_state"
         if state.revision_number <= state.max_revisions:
-            return "reflection"
-        return "finalize"
+            return "reflection_reviewer_graph_state"
+        return "write_abstract_graph_state"
 
     def invoke(self, state: PaperConfig, config: dict) -> str:
         """
@@ -309,7 +348,6 @@ class DocumentWriter:
             f.write(img)
 
 
-
 class KirokuUI:
     def __init__(self, working_dir: Path):
         self.working_dir = working_dir
@@ -346,6 +384,43 @@ class KirokuUI:
         config = {"instruction": instruction}
         return self.writer.invoke(state_values, config)
 
+    def _get_log_updates(self):
+        if not self.writer:
+            return [gr.update(visible=False)] * PREINITIALIZED_COMPONENTS, [
+                gr.update()
+            ] * PREINITIALIZED_COMPONENTS
+
+        state = self.writer.get_state()
+        logs = state.values.get("workflow_logs", [])
+        accordion_updates = []
+        markdown_updates = []
+
+        # Group logs by step
+        grouped_logs = {}
+        steps_order = []
+        for log in logs:
+            if log.step not in grouped_logs:
+                steps_order.append(log.step)
+                grouped_logs[log.step] = []
+            grouped_logs[log.step].append(log)
+
+        for i in range(PREINITIALIZED_COMPONENTS):
+            if i < len(steps_order):
+                step_name = steps_order[i]
+                step_logs = grouped_logs[step_name]
+
+                content = ""
+                for log in step_logs:
+                    content += f"### {log.side}\n{log.message}\n\n---\n\n"
+
+                accordion_updates.append(gr.update(visible=True, label=step_name))
+                markdown_updates.append(gr.update(value=content))
+            else:
+                accordion_updates.append(gr.update(visible=False))
+                markdown_updates.append(gr.update(value=""))
+
+        return accordion_updates, markdown_updates
+
     def update(self, instruction):
         """
         Updates state upon submitting an instruction or updating references.
@@ -362,14 +437,14 @@ class KirokuUI:
 
         # if state is in reflection stage, draft to be shown is in the critique field.
         if (
-            current_state == "reflection_reviewer"
-            and next_state == "additional_reflection_instructions"
+            current_state == "reflection_reviewer_graph_state"
+            and next_state == "additional_reflection_instructions_graph_state"
         ):
             draft = state.values["critique"]
 
         # if next state is going to generate citations, we populate the references
         # for the Tab References.
-        if next_state == "generate_citations":
+        if next_state == "generate_citations_graph_state":
             self.references = state.values.get("references", []).split("\n")
 
         # if we have reached the end, we will save everything.
@@ -382,23 +457,28 @@ class KirokuUI:
 
         processed_draft = self._process_images_for_gradio(draft)
 
-        plot_section_visible = (next_state == "plot_approval")
+        plot_section_visible = next_state == "plot_approval_graph_state"
         plot_suggestions_content = "No plot suggestions available."
         checkbox_updates = [gr.update(visible=False)] * 5
-        
-        if plot_section_visible and hasattr(state, 'values'):
+
+        if plot_section_visible and hasattr(state, "values"):
             suggested_plots = state.values.get("suggested_plots", [])
             if suggested_plots:
                 plot_suggestions_content = self._format_plots_for_ui(suggested_plots)
                 checkbox_updates = self._update_plot_checkboxes(suggested_plots)
-        
+
+        log_accordions, log_markdowns = self._get_log_updates()
+
         return (
-            processed_draft, 
-            self.atlas_message(next_state), 
+            processed_draft,
+            self.atlas_message(next_state),
             gr.update(interactive=False),
             gr.update(visible=plot_section_visible),
-            gr.update(value=plot_suggestions_content)
-        ) + tuple(checkbox_updates)
+            gr.update(value=plot_suggestions_content),
+            *tuple(checkbox_updates),
+            *log_accordions,
+            *log_markdowns,
+        )
 
     def atlas_message(self, state):
         """
@@ -407,31 +487,31 @@ class KirokuUI:
         :return:
         """
         message = {
-            "suggest_title_review": "Please suggest review instructions for the title.",
-            "topic_sentence_manual_review": "Please suggest review instructions for the topic sentences.",
-            "writer_manual_reviewer": "Please suggest review instructions for the main draft.",
-            "additional_reflection_instructions": "Please provide additional instructions for the overall paper review.",
-            "generate_citations": "Please look at the references tab and confirm the references.",
-            "plot_approval": "Please review the suggested plots and approve or reject them. Check the suggested plots below.",
+            "suggest_title_review_graph_state": "Please suggest review instructions for the title.",
+            "topic_sentence_manual_review_graph_state": "Please suggest review instructions for the topic sentences.",
+            "writer_manual_reviewer_graph_state": "Please suggest review instructions for the main draft.",
+            "additional_reflection_instructions_graph_state": "Please provide additional instructions for the overall paper review.",
+            "generate_citations_graph_state": "Please look at the references tab and confirm the references.",
+            "plot_approval_graph_state": "Please review the suggested plots and approve or reject them. Check the suggested plots below.",
         }
 
         instruction = message.get(state, "")
-        if instruction or state == "generate_citations":
-            if state == "generate_citations":
+        if instruction or state == "generate_citations_graph_state":
+            if state == "generate_citations_graph_state":
                 return instruction
             return instruction + " Type <RETURN> when done."
         return "We have reached the end."
 
-    def initial_step(self) -> tuple[str, str]:
+    def initial_step(self) -> tuple:
         """
         Performs initial step, in which we need to providate a state to the graph.
         :return: draft and Echo message.
         """
         state_values = self.state_values.model_copy(deep=True)
         if self.state_values.suggest_title:
-            state_values.state = "suggest_title"
+            state_values.state = "suggest_title_graph_state"
         else:
-            state_values.state = "topic_sentence_writer"
+            state_values.state = "topic_sentence_writer_graph_state"
         draft = self.step("", state_values)
         state = self.writer.get_state()
         current_state = state.values["state"]
@@ -440,7 +520,27 @@ class KirokuUI:
         except:
             next_state = "NONE"
         processed_draft = self._process_images_for_gradio(draft)
-        return processed_draft, self.atlas_message(next_state)
+
+        log_accordions, log_markdowns = self._get_log_updates()
+
+        # Defaults for plot stuff
+        show_plot_approval = False
+        plot_suggestions_md = ""
+        checkbox_updates = [gr.update(visible=False, value=False) for _ in range(5)]
+
+        return (
+            processed_draft,
+            self.atlas_message(next_state),
+            gr.update(
+                value="",
+                interactive=next_state not in [END, "generate_citations", "NONE"],
+            ),
+            gr.update(visible=show_plot_approval),
+            gr.update(value=plot_suggestions_md),
+            *checkbox_updates,
+            *log_accordions,
+            *log_markdowns,
+        )
 
     def process_file(self, filename: str):
         """
@@ -456,7 +556,7 @@ class KirokuUI:
 
         self.state_values = self.read_initial_state(Path(filename))
 
-        logging.info(f"State values: \n\n{self.state_values}")
+        self.working_dir = self.state_values.working_dir
 
         relevant_files_preview = self._update_files_preview()
 
@@ -491,7 +591,7 @@ class KirokuUI:
         latex_draft = state.values.get("latex_draft", "")
         # need to replace file= by empty because of gradio problem in Markdown
         draft = re.sub(r"\/?file=", "", draft)
-        
+
         # Convert relative image paths to absolute paths for Gradio compatibility
         # This helps images display during generation process
         draft = self._process_images_for_gradio(draft)
@@ -583,7 +683,7 @@ class KirokuUI:
         """
         Invokes step of generating citations with user reference feedback.
         :param ref_list: List of references that were unselected.
-        :return: Everything returned by self.update.
+        :return: Everything read by self.update.
         """
         ref_list = ref_list[: len(self.references)]
         state = self.writer.get_state()
@@ -601,91 +701,100 @@ class KirokuUI:
         """Format plots for display in the plot approval UI."""
         if not plots:
             return "No plots suggested."
-        
+
         content = "## Suggested Plots\n\n"
         for i, plot in enumerate(plots, 1):
-            status = "✅ APPROVED" if plot.get("approved") else "❌ Pending approval"
-            content += f"### Plot {i}: {plot.get('description', 'Untitled')} [{status}]\n\n"
-            content += f"**Purpose:** {plot.get('rationale', 'No rationale provided')}\n\n"
-            
-            # Show full code instead of preview
-            full_code = plot.get('code', 'No code provided')
+            status = "✅ APPROVED" if plot.approved else "❌ Pending approval"
+            content += f"### Plot {i}: {plot.description} [{status}]\n\n"
+            content += f"**Purpose:** {plot.rationale}\n\n"
+
+            full_code = plot.code
             content += f"**Full Code:**\n```python\n{full_code}\n```\n\n"
-        
+
         content += "**Instructions:**\n"
-        content += "- Use individual checkboxes above to select which plots to approve\n"
-        content += "- Click 'Apply Individual Selections' to apply your checkbox choices\n"
-        content += "- Or use the 'Approve All' / 'Reject All' buttons for bulk actions\n"
+        content += (
+            "- Use individual checkboxes above to select which plots to approve\n"
+        )
+        content += (
+            "- Click 'Apply Individual Selections' to apply your checkbox choices\n"
+        )
+        content += (
+            "- Or use the 'Approve All' / 'Reject All' buttons for bulk actions\n"
+        )
         content += "- Old text commands still work: 'approve 1,3,5' or 'reject 2,4'\n"
         return content
 
     def _handle_plot_decision(self, decision: str) -> gr.Textbox:
         """Helper method to handle plot approval/rejection decisions."""
         return gr.Textbox(value=decision, interactive=True)
-    
+
     def _update_plot_checkboxes(self, suggested_plots: list):
         """Update the visibility and labels of plot checkboxes."""
         updates = []
         for i, checkbox in enumerate(self.plot_checkboxes):
             if i < len(suggested_plots):
                 plot = suggested_plots[i]
-                updates.append(gr.update(
-                    visible=True,
-                    label=f"✓ Plot {i+1}: {plot.get('description', 'Untitled')}",
-                    value=plot.get('approved', False)
-                ))
+                updates.append(
+                    gr.update(
+                        visible=True,
+                        label=f"✓ Plot {i + 1}: {plot.description}",
+                        value=plot.approved,
+                    )
+                )
             else:
                 updates.append(gr.update(visible=False))
         return updates
-    
+
     def _apply_checkbox_selections(self, *checkbox_values):
         """Apply individual checkbox selections to plot approval."""
-        if hasattr(self, 'writer') and self.writer is not None:
+        if hasattr(self, "writer") and self.writer is not None:
             state = self.writer.get_state()
             suggested_plots = state.values.get("suggested_plots", [])
-            
+
             logging.info(f"Applying checkbox selections: {checkbox_values}")
             logging.info(f"Found {len(suggested_plots)} suggested plots")
-            
+
             # Update approval status based on checkbox values
             for i, checkbox_value in enumerate(checkbox_values):
                 if i < len(suggested_plots):
-                    old_status = suggested_plots[i].get("approved", False)
-                    suggested_plots[i]["approved"] = bool(checkbox_value)
-                    logging.info(f"Plot {i+1}: {old_status} -> {bool(checkbox_value)}")
-            
+                    old_status = suggested_plots[i].approved
+                    suggested_plots[i].approved = bool(checkbox_value)
+                    logging.info(
+                        f"Plot {i + 1}: {old_status} -> {bool(checkbox_value)}"
+                    )
+
             state.values["suggested_plots"] = suggested_plots
             self.writer.update_state(state)
-            
+
             # Continue to next step
             return self.update("apply individual selections")
         return self.update("")
-    
+
     def _process_images_for_gradio(self, draft: str) -> str:
         """Process image paths in markdown to make them work better in Gradio."""
         import re
         import base64
-        
+
         logging.info(f"Processing draft for Gradio image display, length: {len(draft)}")
-        
+
         # Convert relative paths to data URIs for Gradio compatibility
         def replace_image_path(match):
             alt_text = match.group(1)
             path = match.group(2).strip()
-            
+
             logging.info(f"Processing image: [{alt_text}]({path})")
-            
+
             # If it's already a data URI or absolute HTTP path, leave it
-            if path.startswith(('data:', 'http:', 'https:')):
+            if path.startswith(("data:", "http:", "https:")):
                 logging.info(f"Skipping already processed path: {path[:50]}...")
                 return match.group(0)
-            
+
             # Handle different path formats
             absolute_path = None
-            
+
             # Normalize path separators first
             normalized_path = path.replace("\\", "/")
-            
+
             # Handle different path formats
             if normalized_path.startswith("../images/"):
                 filename = normalized_path.replace("../images/", "")
@@ -699,7 +808,7 @@ class KirokuUI:
                 absolute_path = os.path.join(self.working_dir, "images", filename)
                 logging.info(f"Images path: {filename} -> {absolute_path}")
             elif normalized_path.startswith("/images/"):
-                # Handle absolute path starting with /images/ 
+                # Handle absolute path starting with /images/
                 filename = normalized_path.replace("/images/", "")
                 absolute_path = os.path.join(self.working_dir, "images", filename)
                 logging.info(f"Absolute images path: {filename} -> {absolute_path}")
@@ -709,60 +818,66 @@ class KirokuUI:
             else:
                 absolute_path = os.path.join(self.working_dir, path)
                 logging.info(f"Generic relative path: {path} -> {absolute_path}")
-                
+
                 # If that doesn't work, try in images subdirectory
                 if not os.path.exists(absolute_path):
                     absolute_path = os.path.join(self.working_dir, "images", path)
                     logging.info(f"Trying in images subdir: {path} -> {absolute_path}")
-                    
+
                 # Final fallback: try just the filename in images directory
                 if not os.path.exists(absolute_path):
                     filename_only = os.path.basename(path)
-                    absolute_path = os.path.join(self.working_dir, "images", filename_only)
-                    logging.info(f"Trying filename only: {filename_only} -> {absolute_path}")
-            
+                    absolute_path = os.path.join(
+                        self.working_dir, "images", filename_only
+                    )
+                    logging.info(
+                        f"Trying filename only: {filename_only} -> {absolute_path}"
+                    )
+
             if absolute_path:
                 logging.info(f"Absolute path: {absolute_path}")
-                
+
                 # Try to convert to data URI
                 try:
                     if os.path.exists(absolute_path):
-                        with open(absolute_path, 'rb') as img_file:
+                        with open(absolute_path, "rb") as img_file:
                             img_data = img_file.read()
                             # Determine MIME type from extension
                             ext = os.path.splitext(absolute_path)[1].lower()
                             mime_types = {
-                                '.png': 'image/png',
-                                '.jpg': 'image/jpeg', 
-                                '.jpeg': 'image/jpeg',
-                                '.gif': 'image/gif',
-                                '.svg': 'image/svg+xml'
+                                ".png": "image/png",
+                                ".jpg": "image/jpeg",
+                                ".jpeg": "image/jpeg",
+                                ".gif": "image/gif",
+                                ".svg": "image/svg+xml",
                             }
-                            mime_type = mime_types.get(ext, 'image/png')
-                            
+                            mime_type = mime_types.get(ext, "image/png")
+
                             # Encode as base64 data URI
-                            b64_data = base64.b64encode(img_data).decode('utf-8')
+                            b64_data = base64.b64encode(img_data).decode("utf-8")
                             data_uri = f"data:{mime_type};base64,{b64_data}"
-                            logging.info(f"Successfully converted to data URI: {alt_text}")
+                            logging.info(
+                                f"Successfully converted to data URI: {alt_text}"
+                            )
                             return f"![{alt_text}]({data_uri})"
                     else:
                         logging.warning(f"Image file not found: {absolute_path}")
-                        
+
                 except Exception as e:
                     logging.warning(f"Failed to process image {absolute_path}: {e}")
-                
+
                 # Fallback: use absolute path with forward slashes
                 if os.path.exists(absolute_path):
-                    absolute_path = absolute_path.replace(os.sep, '/')
+                    absolute_path = absolute_path.replace(os.sep, "/")
                     logging.info(f"Using absolute path fallback: {absolute_path}")
                     return f"![{alt_text}]({absolute_path})"
-            
+
             logging.warning(f"Could not process image path: {path}")
             return match.group(0)
-        
+
         # Find and replace image references in markdown
-        image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
-        
+        image_pattern = r"!\[([^\]]*)\]\(([^)]+)\)"
+
         # Log all image matches before processing
         matches = re.findall(image_pattern, draft)
         if matches:
@@ -771,9 +886,9 @@ class KirokuUI:
                 logging.info(f"  {i}: [{alt}]({path})")
         else:
             logging.info("No image references found in draft")
-        
+
         processed_draft = re.sub(image_pattern, replace_image_path, draft)
-        
+
         # Check if any processing actually occurred
         if processed_draft != draft:
             logging.info("Draft was modified during image processing")
@@ -784,7 +899,7 @@ class KirokuUI:
                 logging.warning("No data URIs found in processed draft")
         else:
             logging.info("Draft was not modified during image processing")
-        
+
         logging.info(f"Finished processing images for Gradio")
         return processed_draft
 
@@ -801,27 +916,35 @@ class KirokuUI:
                 out = gr.Textbox(label="Echo")
                 inp = gr.Textbox(placeholder="Instruction", label="Rider")
                 markdown = gr.Markdown("")
-                
+
                 with gr.Group(visible=False) as self.plot_approval_section:
                     gr.Markdown("### Plot Suggestions")
-                    self.plot_suggestions_display = gr.Markdown("No plot suggestions available.")
+                    self.plot_suggestions_display = gr.Markdown(
+                        "No plot suggestions available."
+                    )
 
                     with gr.Column() as self.plot_checkboxes_section:
                         self.plot_checkboxes = []
                         for i in range(5):
                             checkbox = gr.Checkbox(
-                                label=f"Plot {i+1}",
+                                label=f"Plot {i + 1}",
                                 value=False,
                                 visible=False,
-                                interactive=True
+                                interactive=True,
                             )
                             self.plot_checkboxes.append(checkbox)
-                    
+
                     with gr.Row():
-                        approve_plots_btn = gr.Button("✓ Approve All Plots", variant="primary")
-                        reject_plots_btn = gr.Button("✗ Reject All Plots", variant="secondary")
-                        apply_checkboxes_btn = gr.Button("Apply Individual Selections", variant="secondary")
-                
+                        approve_plots_btn = gr.Button(
+                            "✓ Approve All Plots", variant="primary"
+                        )
+                        reject_plots_btn = gr.Button(
+                            "✗ Reject All Plots", variant="secondary"
+                        )
+                        apply_checkboxes_btn = gr.Button(
+                            "Apply Individual Selections", variant="secondary"
+                        )
+
                 doc = gr.Button("Save")
             with gr.Tab("References") as self.ref_block:
                 ref_list = [
@@ -832,9 +955,25 @@ class KirokuUI:
                 ]
                 submit_ref_list = gr.Button("Submit", visible=False)
 
+            with gr.Tab("Instruction log"):
+                _, self.log_accordions, self.log_markdowns = (
+                    self._logs_viewer_elements()
+                )
 
-                
-            inp.submit(self.update, inp, [markdown, out, inp, self.plot_approval_section, self.plot_suggestions_display] + self.plot_checkboxes).then(
+            inp.submit(
+                self.update,
+                inp,
+                [
+                    markdown,
+                    out,
+                    inp,
+                    self.plot_approval_section,
+                    self.plot_suggestions_display,
+                    *self.plot_checkboxes,
+                    *self.log_accordions,
+                    *self.log_markdowns,
+                ],
+            ).then(
                 lambda: gr.update(
                     value="",
                     interactive=self.next_state
@@ -844,24 +983,53 @@ class KirokuUI:
                 inp,
             ).then(self.update_refs, [], [submit_ref_list, *ref_list])
             file.upload(self.process_file, file, [*files_preview, js, inp]).then(
-                self.initial_step, [], [markdown, out]
+                self.initial_step,
+                [],
+                [
+                    markdown,
+                    out,
+                    inp,
+                    self.plot_approval_section,
+                    self.plot_suggestions_display,
+                    *self.plot_checkboxes,
+                    *self.log_accordions,
+                    *self.log_markdowns,
+                ],
             ).then(lambda: gr.update(placeholder="", interactive=True), [], inp)
             doc.click(self.save_as, [], out)
             submit_ref_list.click(
-                self.submit_ref_list, ref_list, [markdown, out, submit_ref_list]
+                self.submit_ref_list,
+                ref_list,
+                [
+                    markdown,
+                    out,
+                    inp,
+                    self.plot_approval_section,
+                    self.plot_suggestions_display,
+                    *self.plot_checkboxes,
+                    *self.log_accordions,
+                    *self.log_markdowns,
+                ],
             )
             approve_plots_btn.click(
-                lambda: self._handle_plot_decision("approve all"),
-                outputs=[inp]
+                lambda: self._handle_plot_decision("approve all"), outputs=[inp]
             )
             reject_plots_btn.click(
-                lambda: self._handle_plot_decision("reject all"),
-                outputs=[inp]
+                lambda: self._handle_plot_decision("reject all"), outputs=[inp]
             )
             apply_checkboxes_btn.click(
                 self._apply_checkbox_selections,
                 inputs=self.plot_checkboxes,
-                outputs=[markdown, out, inp, self.plot_approval_section, self.plot_suggestions_display] + self.plot_checkboxes
+                outputs=[
+                    markdown,
+                    out,
+                    inp,
+                    self.plot_approval_section,
+                    self.plot_suggestions_display,
+                    *self.plot_checkboxes,
+                    *self.log_accordions,
+                    *self.log_markdowns,
+                ],
             )
 
     def launch_ui(self):
@@ -872,10 +1040,10 @@ class KirokuUI:
             os.chdir(self.working_dir)
         except Exception as err:
             logging.warning(f"... directory {self.working_dir} does not exist, {err}")
-        
+
         self.images = self.working_dir / "images"
         self.images.mkdir(parents=True, exist_ok=True)
-        
+
         # Create and launch the UI
         self.create_ui()
         self.kiroku_agent.launch()
@@ -896,7 +1064,14 @@ class KirokuUI:
             for file_name, description in file_names_and_descs.items():
                 if (
                     file.suffix
-                    in [".yaml", ".yml", ".md", ".tex", ".html", ".csv", ".parquet"]
+                    in [
+                        ".yaml",
+                        ".yml",
+                        ".md",
+                        ".tex",
+                        ".html",
+                        *SUPPORTED_TABLE_FORMATS,
+                    ]
                     and file.name == file_name
                 ):
                     relevant_files.append(
@@ -904,6 +1079,19 @@ class KirokuUI:
                     )
 
         return relevant_files
+
+    def _logs_viewer_elements(self, n_slots: int = PREINITIALIZED_COMPONENTS):
+        accordions = []
+        markdowns = []
+
+        with gr.Column() as col:
+            for i in range(n_slots):
+                with gr.Accordion(label=f"Step {i}", open=False, visible=False) as acc:
+                    md = gr.Markdown()
+                    accordions.append(acc)
+                    markdowns.append(md)
+
+        return col, accordions, markdowns
 
     def _make_files_preview(
         self, n_slots: int = PREINITIALIZED_COMPONENTS
@@ -991,12 +1179,10 @@ class KirokuUI:
 
 def run():
     """Main entry point for the application."""
-    import os
-    from pathlib import Path
-    
+
     # Get working directory from environment variable or use current directory
     working_dir = Path(os.environ.get("KIROKU_PROJECT_DIRECTORY", "."))
-    
+
     # Create and launch the UI
     ui = KirokuUI(working_dir)
     ui.launch_ui()
