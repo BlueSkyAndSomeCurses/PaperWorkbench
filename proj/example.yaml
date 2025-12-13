@@ -1,6 +1,6 @@
 title: "Pythagorean Theorem Proof"
-suggest_title: False
-generate_citations: False
+suggest_title: True
+generate_citations: True
 model_name: "gpt-5-nano"
 type_of_document: "Research conference paper"
 area_of_paper: "Mathematics"
@@ -18,8 +18,8 @@ number_of_paragraphs:
     "Derivation": 1
 hypothesis: "We want to prove the pythagorean theorem using squares and triangles."
 
-number_of_queries: 0
-max_revisions: 0
+number_of_queries: 1
+max_revisions: 1
 temperature: 1
 
 files_descriptions: # file is considered only if its name is mention here

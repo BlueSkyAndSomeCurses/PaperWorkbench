@@ -69,6 +69,7 @@ class AnalyzeRelevantFiles(State):
 
     def run(self, state: AgentState, config: dict) -> dict:
         logging.info(f"state {self.name}: running")
+
         def process_file(
             relevant_file: RelevantFile,
         ) -> tuple[RelevantFile, list[WorkflowLog]]:
@@ -957,10 +958,10 @@ class GenerateCitations(State):
 
 
 class LaTeXConverter(State):
-    def __init__(self, model: ChatOpenAI):
+    def __init__(self, model: ChatOpenAI) -> None:
         super().__init__(model, "latex_converter")
 
-    def run(self, state: AgentState):
+    def run(self, state: AgentState) -> dict:
         """
         Convert LaTeX in the paper to Markdown format.
         :param state: current state of the agent.
@@ -968,7 +969,6 @@ class LaTeXConverter(State):
         """
 
         logging.info(f"state {self.name}: running")
-        logging.info(state)
         logs = []
 
         latex_draft = self._pandoc_convertion(state)
@@ -1056,6 +1056,8 @@ class PlotSuggestionAgent(State):
             if relevant_file.file_path.suffix in SUPPORTED_TABLE_FORMATS:
                 plot_data = relevant_file.file_path
 
+                logging.info(f"Processing file under path: {plot_data}")
+
                 data_preview, columns_desc, shape = extract_table_data(
                     relevant_file.file_path
                 )
@@ -1090,6 +1092,7 @@ class PlotSuggestionAgent(State):
                 logs.extend([create_log_entry(m, "plot_suggestion") for m in messages])
 
                 response = self.model.invoke(messages)
+                logging.info(f"Suggestiong plot N{i + 1}: {response.content[:100]}")
                 logs.append(create_log_entry(response, "plot_suggestion"))
 
                 plot_suggestions[i] = response.content.strip()
@@ -1128,6 +1131,8 @@ class PlotSuggestionAgent(State):
                         r"```python\s*\n(.*?)\n```", section, re.DOTALL
                     )
                     code = code_match.group(1).strip() if code_match else ""
+
+                    logging.info("Suggestion N {i} section {j} successfully parsed.")
 
                     if description or code:  # Only add if we have some content
                         suggested_plots.append(
