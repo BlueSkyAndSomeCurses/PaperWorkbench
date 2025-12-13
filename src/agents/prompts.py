@@ -307,21 +307,17 @@ Return ONLY valid Python code that:
 3. Returns the figure object
 
 Never use comments for function call or usage - only use code.
-Use the following output structure, separating each plot with the delimiter line '------':
+Use the following output structure, separating each plot with the delimiter line '#------':
 
-```python
 # Code for Plot 1 (must define fig)
 fig, ax = plt.subplots()
 # ... plotting logic
 plt.tight_layout()
-```
-------
-```python
+# ------
 # Code for Plot 2 (must define fig)
 fig, ax = plt.subplots()
 # ... different plotting logic
 plt.tight_layout()
-```
 
 Return ONLY the markdown code blocks and the delimiter. Do not include any other text or explanation.
 """
