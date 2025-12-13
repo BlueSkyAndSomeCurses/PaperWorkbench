@@ -49,6 +49,6 @@ agents/__pycache__/*
 .venv/
 example/
 images/
-*__pycache__*
+*__pycache__/*
 .ruff_cache/
 *.pdf
