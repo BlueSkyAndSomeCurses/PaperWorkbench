@@ -13,13 +13,18 @@ To get an OPENAI_API_KEY, you can check https://platform.openai.com/docs/quickst
 
 To get a TAVILY_API_KEY, you can check the site https://app.tavily.com/sign-in, and click "Sign in".
 
-You may want to use a tool like `direnv` to manage the environment variables `OPENAI_API_KEY` and `TAVILI_API_KEY` on a per-directory basis. 
-This will help you automatically load these variables when you are working within the Kiroku project directory. 
-`direnv` supports Linux, macOS, and Windows through WSL.
+Create and .env file in the repository source containing those key
+```
+OPENAI_API_KEY=<your openai api key>
+TAVILY_API_KEY=<your tavily api key>
+```
+
+[CodeAPI](https://codapi.org/) was used for remote code execution. In case you own a paid plan or host server yourself add the url environment file
+```
+CODEAPI_URL=<your codeapi url>
+```
 
 # Installation
-
-Kiroku supports Python between versions 3.7 and 3.11.
 
 ### 1. Set up a virtual environment
 You can use Python’s `venv` module to create an isolated environment for dependencies. This ensures a clean environment and avoids conflicts with system packages.
@@ -50,8 +55,8 @@ The initial configuration is specified in an YAML file with the following fields
 - `section_names`: list of sections, as in the example below:
 ```markdown
 section_names:
-- Introduction
-- Related Work
+- Introduction: Instructions to be followed when writing this section
+- Related Work: ...
 - Architecture of Kiroku
 - Results
 - Conclusions
@@ -71,92 +76,22 @@ number_of_paragraphs:
 - `instructions`: as you interact with the document giving instructions like "First paragraph of Introduction should
 discuss the revolution that was created with the lauch of ChaGPT", you may want to add some of them to the instruction so that
 in the next iteration, Kiroku will observe your recommendations. In Kiroku, `instructions` are appended into the `hypothesis` at
-this time, so you will not see them. I usually put `\n\n` after each instruction to assist the underlying LLM.
-- `results`: I usually put it here as I fill this later on.
+this time, so you will not see them.  We usually put `\n\n` after each instruction to assist the underlying LLM.
 - `references` are references you want Kiroku to use during its search phase for information.
 - `number_of_queries` tells Kiroku how many questions it will generate to Tavily to search for information.
 - `max_revisions` tells Kiroku how many times it performs reflection and document writing upon analyzing reflection results
 (please note that setting this document to `1`, it means no revision).
 - `temperature` is the temperature of the LLM (usually I set it to a small number).
-
-The final YAML is given below:
-
-```yaml
-title: "Writing Masterpieces when You Become the Adivisor"
-suggest_title: True
-generate_citations: True
-type_of_document: "research seminal paper"
-area_of_paper: "AI and Computer Science"
-section_names:
-- Introduction
-- Related Work
-- Architecture
-- Results
-- Conclusions
-- References
-number_of_paragraphs:
-  "Introduction": 4
-  "Related Work": 7
-  "Architecture": 4
-  "Results": 4
-  "Conclusions": 3
-  "References": 0
-hypothesis: "
-We want to show in this paper that we turn paper writers into 'advisors'
-and a multi-agent system into a 'advisee' who will observe the instructions by,
-interactively turning a course draft of a paper into a publication ready
-document.
-"
-instructions: "
-For the following instructions, you should use your own words.
-\n\n
-The section 'Introduction', you should focus on:
-\n
-- In the first paragraph, you should discuss that the world has change
-since the release of ChatGPT.
-\n
-In the section 'Architecture', you should show the picture
-'/file=images/multi-agent.jpeg' to discuss we write a paper by defining a
-title and hypothesis, writing topic sentences, expanding topic sentences into
-paragraphs, writing the paragraphs, and finally reviewing what you have written.
-"
-results: "
-This is an example on how you can put a results table.
-<table>
-  <tr>
-      <td> </td>
-      <td> Normal Text Rate</td>
-      <td> Kiroku Rate</td>
-  </tr>
-  <tr>
-    <td> Experiment 1</td>
-    <td> 3 </td>
-    <td> 9 </td>
-  </tr>
-  <tr>
-    <td> Experiment 2</td>
-    <td> 5 </td>
-    <td> 10 </td>
-  </tr>
-</table>
-"
-references:
-- "Harrison Chase, Rotem Weiss. AI Agents in LangGraph. https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph"
-number_of_queries: 8
-max_revisions: 1
-temperature: 0.1
-```
+- `working_dir` is the directory with all the relevant files that agent may need throughout writing paper.
+- `output_dir` directory where all the files will be saved
+- `files_descriptions` are names of files located in the `working_dir` together with their optional description
+- `latex_template` latex template of the available templates of the document. Templates should be installed under `latex_templates/` directory.
 
 There is a script `check_yaml` that checks if the YAML file is consistent and it will not crash Kiroku.
 
-I recommend putting all YAML files right now in the `kikoku/proj` directory. All images should be in `kiroku/proj/images`. 
-
-Because of a limitation of Gradio, you need to specify images as `'/file=images/<your-image-file>'` such as in the example `/file=images/multi-agent.jpeg`.
-
 # Running
 
-I recommend running writer as:
-
+To run the system simply use: 
 ```shell
 python -m src.kiroku_app
 ```
@@ -166,6 +101,13 @@ Go to your preferred browser and open `localhost:7860`.
 As for instructions, you can try `I liked title 2` or `I liked the original title`.
 
 Whenever you give an instructions you really liked, remember to add it to the `instructions` field.
+
+# Implementation details
+The workflow is sequential with human-in-the-loop for main part of paper writing process and for plot generation.
+
+After user have uploaded `yaml` config of the future paper, system starts analyzing all the files located in the `working_dir`. Then it generates title ideas (if requested by user), searches for future references in the internet, writes plan for each section. After the plan have been generated it writes the main paper body using all the files and references obtained so far. In parallel, user may generate plots and diagrams using provided tabular data.
+
+When writing the paper user may give additional instructions which will be considered by agent to refine the resulting document. After these steps system finilizes generation process by creating references to used data and converting to LaTeX publication ready style specified by user.
 
 # License
 
@@ -177,14 +119,32 @@ Apache License 2.0 (see LICENSE.txt)
 
 <p id=2> 2. Harrison Chase, Rotem Weiss. AI Agents in LangGraph. https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph</p>
 
+<p id=3> 3. S. Schmidgall et al., "Agent Laboratory: Using LLM Agents as Research Assistants," arXiv preprint arXiv:2501.04227, Jun. 2025.
+
+<p id=4> 4. Chengwei Liu et al., “A Vision for Auto Research with LLM Agents”, arXiv preprint arXiv:2504.18765, Apr. 2025. 
+
+<p id=5> 5. Q. Wu et al., "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation," presented at the LLM Agents Workshop at ICLR 2024, Vienna, Austria, May 2024.
+
+<p id=6> 6. K. Goswami, "PlotGen: Multi-Agent LLM-based Scientific Data Visualization via Multimodal Feedback," arXiv preprint arXiv:2502.00988, Feb. 2025.
+
+<p id=7> 7. A. Plaat, M. van Duijn, N. van Stein, M. Preuss, P. van der Putten, and K. J. Batenburg, "Agentic Large Language Models, a survey," arXiv preprint arXiv:2503.23037, Mar. 2025.
+
+<p id=8> 8. B. Georgiev, J. Gómez-Serrano, T. Tao, and A. Z. Wagner, "MATHEMATICAL EXPLORATION AND DISCOVERY AT SCALE," arXiv preprint arXiv:2511.02864, Nov. 2025.
+
 # Authors
 
-Claudionor N. Coelho Jr (https://www.linkedin.com/in/claudionor-coelho-jr-b156b01/)
+[Claudionor N. Coelho Jr](https://www.linkedin.com/in/claudionor-coelho-jr-b156b01/)
 
-Fabricio Ceolin (https://br.linkedin.com/in/fabceolin)
+[Fabricio Ceolin](https://br.linkedin.com/in/fabceolin)
 
-Luiza N. Coelho (https://www.linkedin.com/in/luiza-coelho-08499112a/)
+[Luiza N. Coelho](https://www.linkedin.com/in/luiza-coelho-08499112a/)
 (looking for a summer internship for summer of 2025 in Business Development, Economics, Marketing)
+
+[Anton Valihurskyi](https://www.linkedin.com/in/anton-valihurskyi-1b6a64347/)
+
+[Mariia Onyschuk](https://www.linkedin.com/in/mariia-onyshchuk-230a5633b/)
+
+[Maksym-Vasyl Tarnavskyi](https://www.linkedin.com/in/maksym-vasyl-tarnavskyi-510366352/)
 
 
 

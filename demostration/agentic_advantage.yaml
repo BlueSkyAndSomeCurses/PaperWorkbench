@@ -1,0 +1,69 @@
+title: "PaperWorkbench: LangGraph based system for AI-assisted scientific paper writing"
+suggest_title: True
+generate_citations: True
+model_name: "gpt-5.2"
+type_of_document: "Research conference paper"
+area_of_paper: "Computer Science. Agentic LLM."
+section_names:
+  Introduction: |
+    For the following instructions, you should use your own words based on the provided text block 'Accelerating Scientific Discovery and Reducing Costs'.
+    The section 'Introduction' should focus on:
+    1. The current bottlenecks in scientific discovery, specifically the lengthy and costly nature of manual research processes.
+    2. Introduce the concept of Agentic LLMs as a solution to automate the entire lifecycle from literature review to reporting.
+    3. [cite_start]Highlight key statistics, such as the potential for an 84% reduction in research expenses and low operational costs (e.g., $2.33 per paper)[cite: 13, 69].
+    4. Conclude with the thesis that these systems allow for simultaneous exploration of multiple ideas.
+  Related Work: |
+    Using the files `2501.04227v2.pdf` (Source 1) and `2502.00988v1.pdf` (Source 2), summarize existing approaches to automated research.
+    1. [cite_start]Discuss 'The AI Scientist' and its limitations regarding human interaction[cite: 49].
+    2. [cite_start]Mention 'ChemCrow' and 'Coscientist' for domain-specific automation[cite: 98].
+    3. [cite_start]Contrast these with the proposed approach, referencing the 'Agent Laboratory' framework which acts as a co-pilot rather than a fully autonomous replacement[cite: 54].
+  System Methodology: |
+    Using the file `2501.04227v2.pdf`, describe the architecture of the proposed system.
+    1. [cite_start]Detail the three primary phases: Literature Review, Experimentation, and Report Writing[cite: 151].
+    2. [cite_start]Describe the specialized agents involved, such as the 'PhD Student' for review and 'MLE-Solver' for coding[cite: 156, 174].
+    3. Insert the diagram  to illustrate the pipeline.
+  Agent Roles and Feedback Mechanisms: |
+    Using the provided text block 'Enhancing Output Quality via Specialized Roles and Iterative Feedback' and `2502.00988v1.pdf`, explain the multi-agent collaboration.
+    1. [cite_start]Describe the role decomposition (e.g., Query Planning, Code Generation)[cite: 2526].
+    2. [cite_start]Focus on the 'Multimodal Feedback' mechanism where agents provide visual, lexical, and numerical critiques to refine outputs[cite: 2528].
+    3. [cite_start]Explain how this iterative self-reflection leads to higher accuracy on benchmarks like MatPlotBench[cite: 2529].
+  Experimental Results: |
+    Using the text block 'Accelerating Scientific Discovery and Reducing Costs' and the file `llm_researcher_metrics.csv`.
+    1. [cite_start]Discuss the quantitative benefits, specifically the speed and cost-efficiency of using different backends like gpt-4o[cite: 723].
+    2. Generate a line plot from `llm_researcher_metrics.csv` comparing 'Inference Cost' vs. 'Paper Quality Score' for different models.
+    3. [cite_start]Analyze the trade-offs between cost (e.g., $2.33 for gpt-4o) and performance[cite: 727].
+  Broader Impact and Democratization: |
+    Using the provided text block 'Democratizing Research and Focusing Human Effort on Ideation'.
+    1. [cite_start]Discuss how this tool lowers technical barriers for novice researchers[cite: 2550].
+    2. [cite_start]Explain the shift in human role from low-level implementation to high-level creative ideation and critical thinking[cite: 14].
+    3. [cite_start]Mention the 'co-pilot' mode benefits in enhancing utility and user trust[cite: 63].
+
+number_of_paragraphs:
+  "Introduction": 2
+  "Related Work": 2
+  "System Methodology": 3
+  "Agent Roles and Feedback Mechanisms": 2
+  "Experimental Results": 3
+  "Broader Impact and Democratization": 2
+
+hypothesis: "Agentic LLM frameworks significantly reduce research costs, improve output quality through iterative feedback, and democratize scientific inquiry."
+    
+
+number_of_queries: 3
+max_revisions: 1
+temperature: 1
+
+files_descriptions: # file is considered only if its name is mention here
+    - file_name: "some_notes.md"
+      description: "How agentic llms can accelerate scientific discovery and reduce costs." 
+    - file_name: "human_effort_and_comunism.md"
+    - file_name: "notes_on_llm.md"
+      # However, model will summarize for itself and write a list of sections where the document is relevant, together with how to use it for the specific section.
+    - file_name: "llm_researcher_metrics.csv"
+      description: "This file contains the experimental results comparing different LLM backends in terms of inference cost and paper quality score."
+
+working_dir: "/Users/vitya/Documents/PaperWorkbench/demostration" # Directory to store all the drafts
+output_dir: "/Users/vitya/Documents/PaperWorkbench/demostration/example_result/" # Directory to store the final output
+
+latex_template: "IEEE" # LaTeX template to use for formatting the final document. Options: "IEEE", "ACM", "Springer", "Elsevier", "Nature", "Custom"
+# You can either provide a CSV file path:

@@ -259,7 +259,7 @@ class DocumentWriter:
         :return: next state to go.
         """
         if config["configurable"]["instruction"]:
-            return "writer_manual_review_graph_state"
+            return "writer_manual_reviewer_graph_state"
         if state.revision_number <= state.max_revisions:
             return "reflection_reviewer_graph_state"
         return "write_abstract_graph_state"
