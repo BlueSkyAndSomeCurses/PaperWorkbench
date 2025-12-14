@@ -771,6 +771,8 @@ class KirokuUI:
                 out = gr.Textbox(label="Echo")
                 inp = gr.Textbox(placeholder="Instruction", label="Rider")
                 markdown = gr.Markdown("")
+                # Add Save button to persist outputs (latex, html, docx, etc.)
+                save_btn = gr.Button("💾 Save", variant="secondary")
 
             with gr.Tab("References") as self.ref_block:
                 ref_list = [
@@ -889,7 +891,8 @@ class KirokuUI:
                 concurrency_id="main_flow",
             ).then(lambda: gr.update(placeholder="", interactive=True), [], inp)
 
-            # doc.click(self.save_as, [], out)
+            save_btn.click(self.save_as, [], out)
+
             submit_ref_list.click(
                 self.submit_ref_list,
                 ref_list,
