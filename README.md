@@ -87,6 +87,53 @@ this time, so you will not see them.  We usually put `\n\n` after each instructi
 - `files_descriptions` are names of files located in the `working_dir` together with their optional description
 - `latex_template` latex template of the available templates of the document. Templates should be installed under `latex_templates/` directory.
 
+The final YAML is given below:
+
+```yaml
+title: "Pythagorean Theorem Proof"
+suggest_title: False
+generate_citations: False
+model_name: "gpt-5-nano"
+type_of_document: "Research conference paper"
+area_of_paper: "Mathematics"
+section_names:
+    Introduction: |
+        For the following instructions, you should use your own words.
+        The section 'Introduction', you should focus on:
+        In the first paragraph, describe the problem of finding hypotenus in a triangle.
+        Write the main formula of pythagorean triangle. Insert the picture `multi-agent.jpeg`.
+    Derivation: |
+        Using the derivation described in relevant documents, structure it in a logical manner and write it in paper.
+
+number_of_paragraphs:
+    "Introduction": 1
+    "Derivation": 1
+hypothesis: "We want to prove the pythagorean theorem using squares and triangles."
+
+number_of_queries: 0
+max_revisions: 1
+temperature: 1
+
+files_descriptions: # file is considered only if its name is mention here
+    - file_name: "multi-agent.jpeg"
+      description: "An image showing a right triangle with squares on each side to illustrate the Pythagorean theorem. To be used in introduction section"
+    - file_name: "train.csv"
+      description: "A CSV file containing training data for a machine learning model. To be used in for plots in introduction section" # summary of the document, once provided model won't provide any
+    - file_name: "pythagorean_triangles.csv"
+      # However, model will summarize for itself and write a list of sections where the document is relevant, together with how to use it for the specific section.
+    - file_name: "example.html"
+    # - file_name: "example.tex"
+    #   description: "This file contains the derivation of the main formula"
+    # - file_name: "example_plan.md"
+    # - file_name: "some_info.yml"
+
+working_dir: "/Users/vitya/Documents/PaperWorkbench/proj/" # Directory to store all the drafts
+output_dir: "/Users/vitya/Documents/PaperWorkbench/proj/example_result/" # Directory to store the final output
+
+latex_template: "IEEE" # LaTeX template to use for formatting the final document. Options: "IEEE", "ACM", "Springer", "Elsevier", "Nature", "Custom"
+# You can either provide a CSV file path:
+```
+
 There is a script `check_yaml` that checks if the YAML file is consistent and it will not crash Kiroku.
 
 # Running
