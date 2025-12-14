@@ -16,6 +16,7 @@ from pathlib import Path
 import gradio as gr
 import markdown
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
 import yaml
 from gradio.components.html import HTML
@@ -48,7 +49,7 @@ class PlotVersion:
     """Represents a generated plot version"""
 
     id: str
-    figure: plt.Figure
+    image_path: str | Path
     code: str
     timestamp: datetime
     selected: bool = False
@@ -795,8 +796,8 @@ class KirokuUI:
                 with gr.Row():
                     for i in range(NUM_PLOTS):
                         with gr.Column():
-                            plot_img = gr.Plot(
-                                label=f"Variation {i + 1}", visible=False
+                            plot_img = gr.Image(
+                                label=f"Variation {i + 1}", visible=False, type="filepath"
                             )
                             plot_images.append(plot_img)
 
@@ -966,7 +967,7 @@ class KirokuUI:
                                 num_plots=num_plots,
                             )
 
-                        fig, code = self.plotter.suggest_plot(
+                        fig_path, code = self.plotter.suggest_plot(
                             relevant_file=relevant_file,
                             paper_content=paper_context if has_draft else "",
                             user_prompt=varied_prompt,  # ← Use varied prompt
@@ -975,7 +976,7 @@ class KirokuUI:
 
                         plot_version = PlotVersion(
                             id=str(uuid.uuid4()),
-                            figure=fig,
+                            image_path=fig_path,
                             code=code,  # ← Each should now have different code
                             timestamp=datetime.now(),
                             selected=False,
@@ -985,7 +986,9 @@ class KirokuUI:
                         logging.info(f"✓ Variation {i + 1} generated")
 
                         # Log code preview to verify it's different
-                        logging.debug(f"Variation {i + 1} code preview: {code[:100]}...")
+                        logging.debug(
+                            f"Variation {i + 1} code preview: {code[:100]}..."
+                        )
 
                     except Exception as e:
                         logging.error(f"Failed to generate variation {i + 1}: {e}")
@@ -996,12 +999,12 @@ class KirokuUI:
 
                 yield self.render_gallery()
 
-            except Exception as e:
-                logging.error("Critical error in generate_multiple_plots", exc_info=True)
-                yield self._create_error_message(f"Critical Error:\n{str(e)}")
-            finally:
-                if self.plotter:
-                    self.plotter.cleanup()
+        except Exception as e:
+            logging.error("Critical error in generate_multiple_plots", exc_info=True)
+            yield self._create_error_message(f"Critical Error:\n{str(e)}")
+        finally:
+            if self.plotter:
+                self.plotter.cleanup()
 
     def render_gallery(self):
         """Render the plot gallery with radio choices"""
@@ -1019,7 +1022,7 @@ class KirokuUI:
         for i in range(NUM_PLOTS):
             if i < len(self.plot_gallery):
                 plot = self.plot_gallery[i]
-                plot_updates.append(gr.update(value=plot.figure, visible=True))
+                plot_updates.append(gr.update(value=str(plot.image_path), visible=True))
             else:
                 plot_updates.append(gr.update(visible=False))
 
@@ -1064,10 +1067,16 @@ class KirokuUI:
         ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=11)
         ax.axis("off")
 
+        # Convert figure to image array for gr.Image
+        fig.canvas.draw()
+        image_array = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        image_array = image_array.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        plt.close(fig)
+
         error_updates = []
         for i in range(NUM_PLOTS):
             if i == 0:
-                error_updates.append(gr.update(value=fig, visible=True))
+                error_updates.append(gr.update(value=image_array, visible=True))
             else:
                 error_updates.append(gr.update(visible=False))
 

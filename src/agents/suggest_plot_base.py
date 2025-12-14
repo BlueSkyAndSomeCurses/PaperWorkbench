@@ -16,11 +16,9 @@ from langchain_openai import ChatOpenAI
 
 from src.agents.prompts import PLOT_SUGGESTION_PROMPT
 from src.agents.utils import create_document_prompt
+from src.utils.codeapi import CodeAPI
 from src.utils.constants import CAPTURE_CODE, DATA_BOOTSTRAP, MATPLOTLIB_SETUP
-from utils.codeapi import CodeAPI
-from utils.models import RelevantFile
-
-logging.basicConfig(level=logging.DEBUG)
+from src.utils.models import RelevantFile
 
 MAX_PLOT_ATTEMPTS = 3
 PLOT_DELIMITER = "# ------"
@@ -220,7 +218,7 @@ Start with imports and end with the last line of code. Nothing else.
         paper_content: str = "",
         user_prompt: str = "",
         num_plots: int = 5,
-    ) -> Tuple[Optional[plt.Figure], str]:
+    ) -> Tuple[Optional[Path], str]:
         """
         Generate a publication-quality plot based on paper content and/or user prompt.
 
@@ -290,14 +288,7 @@ Start with imports and end with the last line of code. Nothing else.
 
                         # Store both the full path and the relative path for markdown
                         relative_path = f"images/{filename}"
-                        generated_images.append(
-                            GeneratedPlotImage(
-                                path=str(img_path),
-                                relative_path=relative_path,
-                                description=plot.description or "Generated plot",
-                                rationale=plot.rationale or "",
-                            )
-                        )
+
                         logging.info(f"Saved plot image: {img_path}")
                 else:
                     logging.warning(f"No images generated for plot {i + 1}")
@@ -305,7 +296,7 @@ Start with imports and end with the last line of code. Nothing else.
                 logging.info(
                     f"✓ Plot generated successfully on attempt {current_attempt}"
                 )
-                return fig, code
+                return img_path, code
 
             except Exception as e:
                 if current_attempt < MAX_PLOT_ATTEMPTS:

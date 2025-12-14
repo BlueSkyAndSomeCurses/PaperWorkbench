@@ -1,8 +1,8 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 
+from src.utils.file_handlers import handle_file_reading_for_model
 from src.utils.models import RelevantFile, WorkflowLog
-from utils.file_handlers import handle_file_reading_for_model
 
 
 def is_interactive():

@@ -1,6 +1,5 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
 
-import chromalog
 from fire import Fire
 import glob
 import logging
@@ -9,8 +8,6 @@ import os
 import yaml
 from yaml import Loader
 
-chromalog.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
 
 def check_paragraphs(state):
     n_errors = 0
@@ -18,8 +15,8 @@ def check_paragraphs(state):
     paragraphs = state.get("number_of_paragraphs", {})
     if len(sections) != len(paragraphs):
         logger.error(
-            f"... 'number_of_paragraphs' must have same size as"
-            "'section_names'")
+            f"... 'number_of_paragraphs' must have same size as'section_names'"
+        )
         n_errors += 1
     if not (len(sections) and len(paragraphs)):
         return n_errors
@@ -27,43 +24,34 @@ def check_paragraphs(state):
         for name in sections:
             if not name in paragraphs:
                 logger.error(
-                    f"... section '{name}' does not exist in"
-                    "'number_of_paragraphs'")
+                    f"... section '{name}' does not exist in'number_of_paragraphs'"
+                )
                 n_errors += 1
         for name in paragraphs:
             if not name in sections:
-                logger.error(
-                    f"... section '{name}' not present in "
-                    "'section_names'")
+                logger.error(f"... section '{name}' not present in 'section_names'")
                 n_errors += 1
             if not isinstance(paragraphs[name], int):
-                logger.error(
-                    f"... number of paragraphs for '{name}' is not a number")
+                logger.error(f"... number of paragraphs for '{name}' is not a number")
                 n_errors += 1
             if paragraphs[name] < 0:
-                logger.error(
-                    f"... number of paragraphs for '{name}' is negative")
+                logger.error(f"... number of paragraphs for '{name}' is negative")
                 n_errors += 1
         if paragraphs["References"] != 0:
-            logger.error(
-                f"... section 'References' must have a 0"
-                " number of paragraphs")
+            logger.error(f"... section 'References' must have a 0 number of paragraphs")
             n_errors += 1
     elif isinstance(paragraphs, list):
         if paragraphs[-1] != 0:
-            logger.error(
-                f"... section 'References' must have a 0"
-                " number of paragraphs")
+            logger.error(f"... section 'References' must have a 0 number of paragraphs")
             n_errors += 1
     else:
-        logger.error(
-            f"... 'number_of_paragraphs' must be of type list or dict")
+        logger.error(f"... 'number_of_paragraphs' must be of type list or dict")
         n_errors += 1
 
     # now, let's just report the images
-    
-        
+
     return n_errors
+
 
 def check_boolean(state, field):
     try:
@@ -77,6 +65,7 @@ def check_boolean(state, field):
 
     return 0
 
+
 def check_string(state, field):
     try:
         logger.debug(f"... '{field}' specified")
@@ -88,6 +77,7 @@ def check_string(state, field):
         return 1
 
     return 0
+
 
 def check_list(state, field, entry_type):
     n_errors = 0
@@ -106,6 +96,7 @@ def check_list(state, field, entry_type):
 
     return n_errors
 
+
 def check_int(state, field):
     try:
         logger.debug(f"... '{field}' specified")
@@ -117,6 +108,7 @@ def check_int(state, field):
         return 1
 
     return 0
+
 
 def check_float(state, field):
     try:
@@ -130,10 +122,11 @@ def check_float(state, field):
 
     return 0
 
+
 def read_initial_state(filename):
     n_errors = 0
     try:
-        stream = open(filename, 'r')
+        stream = open(filename, "r")
     except:
         logger.error(f"... cannot open {filename}")
         n_errors += 1
@@ -153,11 +146,7 @@ def read_initial_state(filename):
 
     # some sections are required for now
     sections = state.get("section_names", [])
-    required_sections = [
-        "Introduction", 
-        "Conclusions", 
-        "References"
-    ]
+    required_sections = ["Introduction", "Conclusions", "References"]
     for name in required_sections:
         if name not in sections:
             logger.error(f"... section '{name}' not present")
@@ -173,25 +162,24 @@ def read_initial_state(filename):
     n_errors += check_float(state, "temperature")
 
     # now let's find the images
-    # an image should be like this: /file=images/file.type 
+    # an image should be like this: /file=images/file.type
     working_dir = os.environ.get("WRITER_PROJECT_DIRECTORY", os.getcwd())
-    images = [fn.split("/")[-1] for fn in glob.glob(working_dir + '/images/*')]
+    images = [fn.split("/")[-1] for fn in glob.glob(working_dir + "/images/*")]
     text = state.get("hypothesis", "") + state.get("instructions", "")
-    for find_entry in re.finditer(r'\/?file=[^\t\n \'\"]*', text):
+    for find_entry in re.finditer(r"\/?file=[^\t\n \'\"]*", text):
         l, r = find_entry.span()
         file_entry = text[l:r]
-        filename = file_entry.split('=')[-1]
+        filename = file_entry.split("=")[-1]
         logger.debug(f"... found image {filename} in YAML")
         filename = filename.split("/")[-1]
         if filename not in images:
-            logger.error(f"       did not find {filename} "
-                         f"in {working_dir}/images")
+            logger.error(f"       did not find {filename} in {working_dir}/images")
         else:
-            logger.debug(f"       found {filename} "
-                         f"in {working_dir}/images")
+            logger.debug(f"       found {filename} in {working_dir}/images")
 
     if n_errors:
         logger.error(f"... found {n_errors} errors")
+
 
 if __name__ == "__main__":
     if not os.environ.get("OPENAI_API_KEY"):
