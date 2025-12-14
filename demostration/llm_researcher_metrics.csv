@@ -1,0 +1,1001 @@
+Researcher_ID,Field_of_Study,Years_Experience,Primary_LLM_Tool,Usage_Frequency,Weekly_Hours_Saved,Papers_Published_3Yrs,Ethical_Concern_Score,AI_Detection_Pass_Rate
+RES_0001,Social Sciences,4,Copilot,Daily,1.1,6,8,94.76
+RES_0002,Humanities,5,Gemini Ultra,Rarely,6.6,6,1,93.02
+RES_0003,Physics,8,Gemini Ultra,Monthly,4.3,5,9,74.37
+RES_0004,Humanities,4,Llama 3,Weekly,12.5,5,4,83.94
+RES_0005,Humanities,6,None,Rarely,0.0,8,8,66.23
+RES_0006,Medicine,3,Claude 3,Rarely,5.7,2,10,81.37
+RES_0007,Physics,5,Claude 3,Never,12.6,3,7,69.19
+RES_0008,Physics,14,GPT-4,Rarely,1.0,3,10,89.68
+RES_0009,Physics,8,Gemini Ultra,Weekly,5.3,8,7,81.07
+RES_0010,Humanities,14,Gemini Ultra,Weekly,4.4,2,2,76.41
+RES_0011,Social Sciences,4,Claude 3,Monthly,4.3,10,1,70.73
+RES_0012,Physics,12,GPT-4,Monthly,2.0,6,4,99.85
+RES_0013,Engineering,1,Copilot,Monthly,3.6,8,2,62.86
+RES_0014,Humanities,8,GPT-4,Rarely,8.8,5,8,61.74
+RES_0015,Medicine,13,Gemini Ultra,Rarely,5.1,3,10,68.67
+RES_0016,Social Sciences,1,None,Never,0.0,5,7,98.75
+RES_0017,Engineering,4,Claude 3,Monthly,6.8,1,8,99.07
+RES_0018,Engineering,8,GPT-4,Daily,6.3,8,6,86.13
+RES_0019,Medicine,16,Gemini Ultra,Never,13.3,6,1,95.12
+RES_0020,Social Sciences,5,Copilot,Daily,13.7,4,9,68.54
+RES_0021,Humanities,12,Llama 3,Rarely,7.9,7,6,98.78
+RES_0022,Computer Science,21,None,Never,0.0,1,10,65.7
+RES_0023,Social Sciences,12,GPT-4,Never,5.6,7,1,64.03
+RES_0024,Medicine,7,Llama 3,Weekly,2.5,3,1,64.48
+RES_0025,Engineering,10,Gemini Ultra,Rarely,14.3,9,8,82.87
+RES_0026,Humanities,5,Copilot,Rarely,1.8,4,6,91.16
+RES_0027,Social Sciences,8,GPT-4,Never,5.2,2,8,74.63
+RES_0028,Computer Science,7,Copilot,Rarely,5.2,4,8,99.02
+RES_0029,Computer Science,10,Llama 3,Never,5.5,6,8,77.33
+RES_0030,Physics,5,Claude 3,Weekly,3.3,2,10,66.0
+RES_0031,Physics,11,GPT-4,Never,12.0,1,7,78.59
+RES_0032,Medicine,5,Copilot,Rarely,2.7,7,7,87.09
+RES_0033,Social Sciences,15,GPT-4,Rarely,9.9,7,10,93.21
+RES_0034,Social Sciences,6,Claude 3,Never,2.7,6,4,78.3
+RES_0035,Engineering,1,GPT-4,Never,2.0,8,9,83.68
+RES_0036,Engineering,3,Copilot,Never,13.7,7,2,70.67
+RES_0037,Engineering,8,Gemini Ultra,Monthly,3.7,5,9,85.77
+RES_0038,Physics,24,Gemini Ultra,Rarely,12.5,6,10,99.34
+RES_0039,Social Sciences,14,GPT-4,Rarely,8.6,6,3,61.96
+RES_0040,Social Sciences,1,Gemini Ultra,Monthly,2.1,7,2,95.37
+RES_0041,Computer Science,1,Llama 3,Never,14.4,6,4,82.44
+RES_0042,Physics,18,Copilot,Weekly,4.5,3,5,70.06
+RES_0043,Humanities,13,None,Never,0.0,3,2,98.1
+RES_0044,Physics,33,GPT-4,Never,13.0,1,1,79.29
+RES_0045,Humanities,5,Gemini Ultra,Monthly,3.4,5,10,73.23
+RES_0046,Computer Science,3,GPT-4,Rarely,13.0,3,5,67.24
+RES_0047,Medicine,8,Llama 3,Never,1.2,9,9,69.75
+RES_0048,Social Sciences,5,GPT-4,Rarely,8.2,8,5,93.23
+RES_0049,Computer Science,16,Claude 3,Daily,11.8,4,10,84.51
+RES_0050,Social Sciences,5,Claude 3,Rarely,14.1,2,9,96.44
+RES_0051,Engineering,6,Gemini Ultra,Weekly,13.7,3,10,69.26
+RES_0052,Medicine,3,Claude 3,Weekly,12.5,2,6,64.83
+RES_0053,Medicine,14,Gemini Ultra,Never,13.4,4,3,60.24
+RES_0054,Computer Science,3,Claude 3,Rarely,3.8,4,4,80.26
+RES_0055,Medicine,11,GPT-4,Never,5.0,5,4,99.83
+RES_0056,Humanities,27,Gemini Ultra,Monthly,5.0,8,1,87.73
+RES_0057,Medicine,1,GPT-4,Weekly,6.3,6,3,72.3
+RES_0058,Social Sciences,22,Claude 3,Never,6.5,3,3,94.99
+RES_0059,Social Sciences,10,Gemini Ultra,Monthly,8.6,5,1,91.19
+RES_0060,Social Sciences,2,Claude 3,Never,3.2,6,9,60.62
+RES_0061,Social Sciences,9,GPT-4,Rarely,10.7,3,1,92.59
+RES_0062,Humanities,13,Claude 3,Rarely,3.3,8,9,71.99
+RES_0063,Physics,4,None,Rarely,0.0,8,1,65.97
+RES_0064,Engineering,11,Gemini Ultra,Rarely,5.3,5,2,69.03
+RES_0065,Computer Science,23,Gemini Ultra,Daily,8.0,4,2,78.7
+RES_0066,Social Sciences,5,Gemini Ultra,Monthly,12.2,2,6,76.95
+RES_0067,Medicine,3,GPT-4,Monthly,11.4,6,7,71.53
+RES_0068,Social Sciences,7,Claude 3,Rarely,10.0,5,1,66.87
+RES_0069,Medicine,8,Gemini Ultra,Daily,3.2,6,3,90.41
+RES_0070,Engineering,17,GPT-4,Rarely,8.7,7,2,99.51
+RES_0071,Engineering,7,GPT-4,Daily,2.2,3,8,91.03
+RES_0072,Engineering,5,GPT-4,Rarely,6.3,9,9,71.81
+RES_0073,Medicine,3,Claude 3,Weekly,6.8,2,2,69.77
+RES_0074,Social Sciences,1,None,Weekly,0.0,0,2,68.68
+RES_0075,Engineering,2,GPT-4,Never,1.6,6,10,65.45
+RES_0076,Humanities,2,Llama 3,Rarely,4.8,4,9,82.0
+RES_0077,Medicine,6,GPT-4,Monthly,14.4,6,4,84.16
+RES_0078,Medicine,1,None,Never,0.0,4,5,88.15
+RES_0079,Social Sciences,7,GPT-4,Weekly,14.4,5,9,87.14
+RES_0080,Medicine,26,Claude 3,Rarely,5.9,2,6,71.66
+RES_0081,Medicine,17,Gemini Ultra,Never,1.6,5,10,73.18
+RES_0082,Engineering,6,Gemini Ultra,Rarely,3.5,4,9,87.19
+RES_0083,Social Sciences,38,Claude 3,Weekly,6.5,3,9,73.94
+RES_0084,Engineering,8,Claude 3,Never,14.3,5,7,68.48
+RES_0085,Engineering,9,Claude 3,Weekly,3.0,3,10,74.94
+RES_0086,Social Sciences,7,GPT-4,Daily,11.7,3,9,70.86
+RES_0087,Computer Science,8,GPT-4,Weekly,2.5,4,5,63.52
+RES_0088,Engineering,5,Claude 3,Rarely,14.7,8,5,93.12
+RES_0089,Humanities,6,GPT-4,Monthly,6.3,5,8,94.04
+RES_0090,Humanities,22,GPT-4,Weekly,11.9,4,10,68.77
+RES_0091,Medicine,19,Gemini Ultra,Monthly,5.8,4,4,62.58
+RES_0092,Humanities,1,None,Daily,0.0,4,9,89.48
+RES_0093,Medicine,2,Gemini Ultra,Never,9.8,4,7,68.44
+RES_0094,Computer Science,4,GPT-4,Never,3.7,7,7,75.7
+RES_0095,Social Sciences,15,GPT-4,Monthly,3.0,8,3,62.56
+RES_0096,Social Sciences,19,None,Never,0.0,7,4,69.03
+RES_0097,Social Sciences,13,GPT-4,Weekly,14.1,3,7,91.64
+RES_0098,Humanities,2,GPT-4,Monthly,13.8,6,5,92.1
+RES_0099,Computer Science,5,Llama 3,Rarely,13.4,6,3,68.26
+RES_0100,Humanities,11,Gemini Ultra,Weekly,9.8,4,1,73.4
+RES_0101,Humanities,6,Gemini Ultra,Weekly,12.3,6,7,65.36
+RES_0102,Computer Science,6,GPT-4,Weekly,2.0,9,6,62.96
+RES_0103,Computer Science,6,GPT-4,Rarely,5.7,6,10,99.59
+RES_0104,Computer Science,18,None,Daily,0.0,4,7,86.16
+RES_0105,Computer Science,12,GPT-4,Never,5.4,6,2,81.63
+RES_0106,Social Sciences,6,Gemini Ultra,Monthly,9.9,7,4,90.54
+RES_0107,Physics,10,Gemini Ultra,Daily,6.0,4,2,93.52
+RES_0108,Physics,2,Gemini Ultra,Monthly,3.1,3,8,92.19
+RES_0109,Computer Science,5,Claude 3,Never,9.4,4,7,60.66
+RES_0110,Physics,17,GPT-4,Rarely,12.4,5,1,67.45
+RES_0111,Physics,1,Llama 3,Weekly,6.3,3,2,86.13
+RES_0112,Computer Science,12,Copilot,Weekly,2.9,5,2,74.99
+RES_0113,Physics,1,None,Rarely,0.0,3,4,99.2
+RES_0114,Humanities,24,GPT-4,Daily,3.8,5,3,86.55
+RES_0115,Medicine,5,GPT-4,Daily,4.3,5,1,98.17
+RES_0116,Medicine,11,None,Monthly,0.0,5,2,68.04
+RES_0117,Computer Science,9,Gemini Ultra,Rarely,5.2,6,9,94.47
+RES_0118,Social Sciences,9,Copilot,Daily,10.0,6,1,72.82
+RES_0119,Computer Science,10,GPT-4,Rarely,9.4,6,9,99.48
+RES_0120,Social Sciences,1,Llama 3,Never,10.7,5,7,66.29
+RES_0121,Medicine,9,Gemini Ultra,Weekly,6.1,7,2,80.6
+RES_0122,Computer Science,7,Gemini Ultra,Weekly,12.5,3,2,91.63
+RES_0123,Engineering,5,Claude 3,Weekly,3.9,5,5,77.26
+RES_0124,Humanities,4,GPT-4,Rarely,7.6,7,5,78.68
+RES_0125,Physics,9,Llama 3,Rarely,12.2,2,4,99.36
+RES_0126,Social Sciences,3,GPT-4,Monthly,3.5,8,10,76.97
+RES_0127,Engineering,16,Claude 3,Weekly,2.5,4,10,84.1
+RES_0128,Physics,11,None,Monthly,0.0,2,3,62.18
+RES_0129,Physics,10,Claude 3,Weekly,13.4,5,4,93.6
+RES_0130,Computer Science,16,Copilot,Monthly,5.8,5,10,85.86
+RES_0131,Physics,1,GPT-4,Monthly,10.6,4,4,76.12
+RES_0132,Humanities,2,Gemini Ultra,Never,1.4,6,2,60.65
+RES_0133,Engineering,12,None,Monthly,0.0,8,5,83.61
+RES_0134,Physics,4,GPT-4,Rarely,10.7,4,5,60.51
+RES_0135,Computer Science,4,GPT-4,Monthly,5.4,3,5,60.05
+RES_0136,Humanities,2,Claude 3,Weekly,1.8,6,10,84.58
+RES_0137,Medicine,3,GPT-4,Monthly,9.5,4,1,67.54
+RES_0138,Engineering,17,Gemini Ultra,Daily,4.4,2,6,67.66
+RES_0139,Physics,11,None,Weekly,0.0,3,2,86.07
+RES_0140,Computer Science,9,Claude 3,Daily,6.4,1,7,62.14
+RES_0141,Medicine,5,GPT-4,Weekly,2.1,9,4,72.5
+RES_0142,Medicine,9,Claude 3,Rarely,3.1,5,5,65.96
+RES_0143,Social Sciences,18,Gemini Ultra,Rarely,5.2,3,5,83.15
+RES_0144,Humanities,4,GPT-4,Rarely,2.3,4,5,86.4
+RES_0145,Physics,8,Llama 3,Daily,13.8,3,2,88.77
+RES_0146,Computer Science,25,Gemini Ultra,Never,1.1,4,5,70.18
+RES_0147,Social Sciences,13,Gemini Ultra,Weekly,7.8,6,3,63.56
+RES_0148,Humanities,5,GPT-4,Rarely,2.7,4,4,63.14
+RES_0149,Social Sciences,13,Gemini Ultra,Weekly,5.3,2,2,77.0
+RES_0150,Engineering,1,GPT-4,Daily,14.0,6,4,97.74
+RES_0151,Humanities,7,GPT-4,Never,3.3,3,9,68.69
+RES_0152,Humanities,13,Copilot,Daily,14.5,6,8,70.24
+RES_0153,Physics,11,Gemini Ultra,Weekly,3.9,2,3,64.03
+RES_0154,Humanities,12,GPT-4,Never,11.4,8,1,84.16
+RES_0155,Social Sciences,14,GPT-4,Never,8.7,3,1,87.13
+RES_0156,Humanities,11,GPT-4,Daily,13.4,6,6,85.65
+RES_0157,Physics,11,GPT-4,Rarely,8.8,4,3,94.36
+RES_0158,Physics,9,GPT-4,Weekly,8.5,5,4,79.41
+RES_0159,Engineering,3,GPT-4,Monthly,3.7,6,1,65.36
+RES_0160,Social Sciences,17,Claude 3,Monthly,3.3,1,8,71.55
+RES_0161,Medicine,8,Gemini Ultra,Daily,13.8,5,1,86.43
+RES_0162,Medicine,13,Gemini Ultra,Weekly,5.6,7,5,84.46
+RES_0163,Humanities,15,Gemini Ultra,Weekly,6.2,6,6,81.19
+RES_0164,Engineering,5,GPT-4,Daily,11.6,6,2,87.25
+RES_0165,Computer Science,5,None,Weekly,0.0,7,7,85.43
+RES_0166,Humanities,6,Copilot,Rarely,5.7,4,7,95.16
+RES_0167,Engineering,19,Copilot,Daily,14.3,3,1,83.38
+RES_0168,Social Sciences,3,Copilot,Rarely,11.3,8,4,91.07
+RES_0169,Social Sciences,21,None,Weekly,0.0,4,4,69.92
+RES_0170,Social Sciences,9,Llama 3,Daily,9.4,5,5,87.06
+RES_0171,Social Sciences,10,GPT-4,Weekly,13.3,5,1,96.0
+RES_0172,Social Sciences,15,Gemini Ultra,Daily,1.7,3,1,75.39
+RES_0173,Engineering,8,Gemini Ultra,Weekly,4.6,9,7,91.09
+RES_0174,Engineering,17,Gemini Ultra,Rarely,7.5,8,9,88.92
+RES_0175,Physics,5,Llama 3,Rarely,4.2,6,1,62.38
+RES_0176,Medicine,21,GPT-4,Weekly,11.4,3,2,83.2
+RES_0177,Social Sciences,5,Claude 3,Daily,13.9,5,6,65.19
+RES_0178,Computer Science,21,None,Monthly,0.0,5,6,98.6
+RES_0179,Engineering,5,Llama 3,Rarely,6.9,5,2,92.38
+RES_0180,Computer Science,6,Llama 3,Rarely,5.8,3,9,64.38
+RES_0181,Computer Science,3,GPT-4,Monthly,14.5,7,4,64.86
+RES_0182,Computer Science,4,Claude 3,Weekly,7.2,3,7,83.72
+RES_0183,Physics,8,Copilot,Daily,7.8,0,6,73.76
+RES_0184,Engineering,9,Gemini Ultra,Weekly,5.9,6,3,61.39
+RES_0185,Computer Science,16,Gemini Ultra,Never,13.7,6,8,81.61
+RES_0186,Social Sciences,7,Claude 3,Rarely,9.0,4,7,75.48
+RES_0187,Humanities,11,Gemini Ultra,Never,11.7,5,9,64.03
+RES_0188,Computer Science,9,GPT-4,Rarely,12.4,9,3,92.0
+RES_0189,Physics,11,Gemini Ultra,Rarely,5.8,5,1,96.51
+RES_0190,Engineering,4,Claude 3,Never,7.1,4,2,90.19
+RES_0191,Physics,5,Claude 3,Never,12.9,3,1,92.81
+RES_0192,Computer Science,4,Gemini Ultra,Weekly,6.1,6,5,68.64
+RES_0193,Engineering,18,None,Never,0.0,2,10,70.52
+RES_0194,Humanities,21,GPT-4,Weekly,12.1,6,2,68.32
+RES_0195,Computer Science,5,Copilot,Weekly,14.2,6,3,90.53
+RES_0196,Physics,5,GPT-4,Weekly,9.7,6,8,97.82
+RES_0197,Medicine,13,Claude 3,Rarely,11.4,5,10,88.6
+RES_0198,Social Sciences,22,GPT-4,Rarely,12.3,3,5,95.17
+RES_0199,Physics,26,Claude 3,Never,12.8,4,4,85.48
+RES_0200,Engineering,4,Llama 3,Rarely,6.5,4,5,75.47
+RES_0201,Computer Science,6,GPT-4,Never,1.7,5,10,76.99
+RES_0202,Social Sciences,10,Claude 3,Rarely,6.6,4,6,63.01
+RES_0203,Computer Science,10,None,Daily,0.0,4,7,61.26
+RES_0204,Engineering,7,GPT-4,Daily,10.4,5,9,87.75
+RES_0205,Computer Science,4,Gemini Ultra,Never,7.3,5,1,77.49
+RES_0206,Medicine,8,Claude 3,Rarely,11.5,5,4,82.03
+RES_0207,Social Sciences,26,Gemini Ultra,Rarely,6.0,7,9,82.25
+RES_0208,Social Sciences,5,GPT-4,Weekly,9.9,3,5,71.07
+RES_0209,Engineering,9,GPT-4,Monthly,3.6,2,8,78.99
+RES_0210,Medicine,37,GPT-4,Never,11.5,4,1,78.78
+RES_0211,Physics,5,GPT-4,Monthly,8.6,4,4,75.5
+RES_0212,Computer Science,13,GPT-4,Monthly,3.9,6,9,92.74
+RES_0213,Humanities,26,Gemini Ultra,Never,5.1,3,1,78.0
+RES_0214,Computer Science,12,Copilot,Rarely,11.5,5,1,84.09
+RES_0215,Computer Science,17,Copilot,Never,7.8,5,4,95.73
+RES_0216,Physics,14,Gemini Ultra,Monthly,4.0,5,3,94.56
+RES_0217,Computer Science,12,GPT-4,Rarely,14.5,5,7,95.53
+RES_0218,Medicine,20,GPT-4,Daily,11.0,3,3,70.77
+RES_0219,Medicine,13,Claude 3,Never,14.4,10,1,61.4
+RES_0220,Social Sciences,7,GPT-4,Never,7.0,5,10,70.42
+RES_0221,Engineering,9,Llama 3,Rarely,7.7,4,2,71.12
+RES_0222,Humanities,10,Llama 3,Daily,13.6,4,10,96.28
+RES_0223,Computer Science,6,Claude 3,Daily,8.4,7,4,85.9
+RES_0224,Computer Science,9,Claude 3,Rarely,10.9,3,1,63.26
+RES_0225,Physics,8,Copilot,Weekly,4.5,6,1,65.4
+RES_0226,Engineering,13,Gemini Ultra,Never,7.3,2,8,66.21
+RES_0227,Medicine,31,Claude 3,Never,2.7,4,7,85.15
+RES_0228,Humanities,10,None,Monthly,0.0,4,8,89.34
+RES_0229,Social Sciences,23,None,Rarely,0.0,4,4,94.3
+RES_0230,Medicine,12,Claude 3,Monthly,3.9,8,6,97.53
+RES_0231,Engineering,9,Claude 3,Monthly,1.0,5,3,68.05
+RES_0232,Social Sciences,5,Llama 3,Daily,1.5,8,8,72.36
+RES_0233,Physics,9,None,Never,0.0,5,4,69.59
+RES_0234,Physics,9,Copilot,Monthly,14.7,7,3,74.31
+RES_0235,Computer Science,4,GPT-4,Daily,4.4,8,4,96.5
+RES_0236,Engineering,5,Claude 3,Rarely,10.3,3,6,82.95
+RES_0237,Humanities,11,Llama 3,Monthly,12.7,4,7,89.45
+RES_0238,Social Sciences,23,Llama 3,Never,8.7,6,7,79.56
+RES_0239,Medicine,7,GPT-4,Monthly,3.1,4,4,61.15
+RES_0240,Engineering,2,Copilot,Rarely,11.2,4,8,62.56
+RES_0241,Engineering,3,Gemini Ultra,Monthly,9.4,6,7,81.46
+RES_0242,Physics,13,Copilot,Never,11.2,2,2,88.68
+RES_0243,Computer Science,2,Copilot,Daily,11.8,4,8,68.59
+RES_0244,Computer Science,15,Gemini Ultra,Never,14.7,2,9,88.8
+RES_0245,Social Sciences,13,Claude 3,Daily,9.0,8,5,92.35
+RES_0246,Physics,7,Gemini Ultra,Weekly,5.8,7,4,76.43
+RES_0247,Engineering,4,GPT-4,Never,10.1,2,4,89.78
+RES_0248,Humanities,6,Gemini Ultra,Never,2.0,5,4,76.12
+RES_0249,Physics,10,GPT-4,Rarely,13.6,6,6,87.07
+RES_0250,Social Sciences,2,Gemini Ultra,Monthly,2.7,7,4,90.48
+RES_0251,Social Sciences,21,GPT-4,Daily,5.6,7,7,99.58
+RES_0252,Physics,10,GPT-4,Daily,12.4,7,7,73.78
+RES_0253,Social Sciences,11,GPT-4,Rarely,9.4,6,5,76.4
+RES_0254,Physics,13,GPT-4,Rarely,6.5,5,5,66.61
+RES_0255,Medicine,20,Gemini Ultra,Monthly,7.6,5,10,68.14
+RES_0256,Physics,9,Gemini Ultra,Monthly,13.0,8,8,87.67
+RES_0257,Physics,13,Llama 3,Never,5.8,7,7,96.59
+RES_0258,Social Sciences,4,GPT-4,Weekly,13.2,4,7,75.74
+RES_0259,Social Sciences,26,GPT-4,Monthly,2.2,5,6,67.18
+RES_0260,Computer Science,9,GPT-4,Rarely,11.9,8,7,71.38
+RES_0261,Computer Science,4,GPT-4,Monthly,12.9,5,7,78.16
+RES_0262,Medicine,5,Copilot,Daily,3.5,2,10,71.6
+RES_0263,Computer Science,1,GPT-4,Weekly,7.0,3,2,69.32
+RES_0264,Physics,5,Claude 3,Never,3.3,7,10,89.37
+RES_0265,Social Sciences,1,GPT-4,Daily,10.9,3,2,60.31
+RES_0266,Computer Science,14,GPT-4,Daily,8.5,8,10,81.52
+RES_0267,Computer Science,11,Llama 3,Weekly,9.9,1,7,91.67
+RES_0268,Medicine,3,Gemini Ultra,Never,3.8,5,10,70.62
+RES_0269,Engineering,8,GPT-4,Rarely,4.0,3,7,84.07
+RES_0270,Medicine,8,GPT-4,Never,1.6,5,7,86.69
+RES_0271,Physics,2,Claude 3,Monthly,5.5,5,5,86.14
+RES_0272,Social Sciences,6,GPT-4,Daily,8.8,2,1,77.79
+RES_0273,Medicine,8,GPT-4,Monthly,13.0,7,2,73.83
+RES_0274,Computer Science,6,None,Rarely,0.0,2,9,93.35
+RES_0275,Social Sciences,4,Gemini Ultra,Monthly,10.3,4,8,90.26
+RES_0276,Social Sciences,3,Llama 3,Never,7.1,5,8,72.82
+RES_0277,Computer Science,6,Claude 3,Monthly,14.3,4,10,64.11
+RES_0278,Medicine,5,Claude 3,Rarely,11.1,4,1,62.87
+RES_0279,Computer Science,12,Llama 3,Rarely,14.0,5,6,63.76
+RES_0280,Engineering,21,Gemini Ultra,Rarely,8.4,4,9,83.26
+RES_0281,Social Sciences,15,Gemini Ultra,Never,4.6,4,8,62.06
+RES_0282,Humanities,8,GPT-4,Rarely,1.7,5,3,73.44
+RES_0283,Humanities,4,Llama 3,Daily,11.2,7,4,90.05
+RES_0284,Physics,15,Claude 3,Rarely,2.7,6,3,71.74
+RES_0285,Computer Science,13,Copilot,Monthly,5.2,6,6,90.46
+RES_0286,Computer Science,20,Gemini Ultra,Monthly,8.5,8,9,89.74
+RES_0287,Physics,9,Llama 3,Monthly,8.9,5,8,69.81
+RES_0288,Physics,25,GPT-4,Never,9.4,2,10,89.08
+RES_0289,Physics,9,Gemini Ultra,Monthly,3.3,4,4,89.84
+RES_0290,Social Sciences,4,GPT-4,Never,6.3,6,2,75.86
+RES_0291,Engineering,5,Claude 3,Never,9.6,3,8,68.4
+RES_0292,Computer Science,12,GPT-4,Rarely,14.6,3,8,80.8
+RES_0293,Social Sciences,5,Gemini Ultra,Daily,11.2,5,6,96.76
+RES_0294,Physics,25,GPT-4,Rarely,13.9,5,8,85.52
+RES_0295,Computer Science,11,Claude 3,Rarely,11.7,6,9,66.9
+RES_0296,Social Sciences,8,Copilot,Never,9.3,2,1,87.24
+RES_0297,Engineering,9,GPT-4,Never,3.7,6,9,77.05
+RES_0298,Social Sciences,6,Llama 3,Monthly,10.3,4,2,83.6
+RES_0299,Engineering,1,Claude 3,Monthly,9.7,3,1,89.29
+RES_0300,Physics,5,GPT-4,Rarely,9.4,4,8,80.55
+RES_0301,Engineering,23,Gemini Ultra,Weekly,7.9,2,8,92.48
+RES_0302,Computer Science,9,GPT-4,Weekly,8.4,6,4,88.81
+RES_0303,Physics,17,Claude 3,Monthly,5.7,8,8,84.54
+RES_0304,Computer Science,17,Llama 3,Weekly,8.3,5,7,66.02
+RES_0305,Humanities,8,Gemini Ultra,Monthly,3.8,6,2,93.35
+RES_0306,Medicine,13,Gemini Ultra,Never,12.3,5,5,97.34
+RES_0307,Engineering,1,GPT-4,Rarely,3.6,5,10,65.46
+RES_0308,Medicine,21,GPT-4,Daily,2.2,6,4,79.48
+RES_0309,Medicine,20,Gemini Ultra,Rarely,7.1,4,3,70.33
+RES_0310,Engineering,11,Llama 3,Monthly,10.2,4,1,90.11
+RES_0311,Physics,10,Copilot,Monthly,7.1,5,5,88.79
+RES_0312,Humanities,8,Copilot,Rarely,4.9,5,10,65.62
+RES_0313,Computer Science,18,Copilot,Monthly,8.8,4,8,94.99
+RES_0314,Social Sciences,14,Claude 3,Weekly,5.9,4,9,67.22
+RES_0315,Computer Science,6,Claude 3,Weekly,14.1,7,7,91.81
+RES_0316,Social Sciences,2,Gemini Ultra,Monthly,13.9,5,1,78.23
+RES_0317,Computer Science,2,Claude 3,Monthly,8.0,4,1,73.1
+RES_0318,Engineering,18,GPT-4,Weekly,5.6,3,1,66.31
+RES_0319,Humanities,8,Copilot,Monthly,11.3,9,2,66.69
+RES_0320,Social Sciences,11,Copilot,Monthly,1.5,6,1,86.41
+RES_0321,Physics,8,Claude 3,Rarely,7.6,6,4,81.96
+RES_0322,Computer Science,2,GPT-4,Daily,5.7,4,10,64.87
+RES_0323,Computer Science,1,Claude 3,Weekly,13.9,7,9,64.5
+RES_0324,Social Sciences,5,Copilot,Rarely,1.2,6,4,62.89
+RES_0325,Physics,6,None,Daily,0.0,6,4,89.68
+RES_0326,Physics,6,GPT-4,Monthly,8.7,2,7,88.4
+RES_0327,Engineering,6,GPT-4,Monthly,11.4,6,9,62.33
+RES_0328,Engineering,30,Copilot,Rarely,7.8,4,7,82.35
+RES_0329,Engineering,16,Claude 3,Monthly,2.2,7,1,63.38
+RES_0330,Engineering,9,Llama 3,Never,14.6,8,1,96.06
+RES_0331,Engineering,7,None,Rarely,0.0,6,4,96.19
+RES_0332,Engineering,8,GPT-4,Daily,8.3,3,4,87.86
+RES_0333,Humanities,14,Gemini Ultra,Rarely,9.6,4,1,96.95
+RES_0334,Physics,7,GPT-4,Weekly,4.3,5,6,92.38
+RES_0335,Engineering,15,Claude 3,Rarely,7.8,3,10,93.06
+RES_0336,Physics,10,Copilot,Monthly,7.0,5,2,82.73
+RES_0337,Physics,30,Claude 3,Monthly,2.0,8,5,72.21
+RES_0338,Medicine,7,None,Never,0.0,8,8,68.69
+RES_0339,Humanities,17,Llama 3,Never,2.5,5,3,73.06
+RES_0340,Engineering,3,Claude 3,Never,12.7,5,9,85.08
+RES_0341,Computer Science,4,GPT-4,Daily,4.4,8,7,66.89
+RES_0342,Social Sciences,27,Claude 3,Never,3.7,5,9,70.32
+RES_0343,Computer Science,15,Claude 3,Daily,8.1,4,1,78.68
+RES_0344,Humanities,11,GPT-4,Never,11.8,3,5,69.3
+RES_0345,Social Sciences,35,Claude 3,Daily,1.9,7,3,83.49
+RES_0346,Humanities,7,Claude 3,Rarely,9.1,4,4,96.83
+RES_0347,Physics,17,Gemini Ultra,Rarely,2.7,4,4,89.85
+RES_0348,Social Sciences,18,Gemini Ultra,Monthly,1.5,5,7,86.59
+RES_0349,Physics,23,Gemini Ultra,Daily,1.7,3,10,83.25
+RES_0350,Computer Science,2,GPT-4,Weekly,12.7,5,8,79.47
+RES_0351,Computer Science,7,GPT-4,Monthly,2.7,4,10,67.44
+RES_0352,Social Sciences,10,Gemini Ultra,Rarely,1.6,6,5,95.7
+RES_0353,Social Sciences,23,Claude 3,Daily,7.1,5,10,69.92
+RES_0354,Engineering,11,GPT-4,Never,12.8,5,7,63.64
+RES_0355,Humanities,18,Copilot,Weekly,4.7,2,3,89.93
+RES_0356,Engineering,2,Gemini Ultra,Rarely,6.9,5,3,67.01
+RES_0357,Humanities,6,Llama 3,Monthly,1.6,3,3,74.84
+RES_0358,Engineering,20,GPT-4,Daily,7.3,3,4,61.13
+RES_0359,Physics,7,Gemini Ultra,Weekly,9.1,5,6,65.47
+RES_0360,Social Sciences,8,Llama 3,Daily,9.0,4,5,66.91
+RES_0361,Computer Science,23,Gemini Ultra,Never,5.7,3,8,62.17
+RES_0362,Humanities,3,Gemini Ultra,Monthly,5.4,4,5,86.2
+RES_0363,Humanities,4,Copilot,Daily,2.5,2,5,93.4
+RES_0364,Computer Science,2,Llama 3,Rarely,6.1,6,10,74.9
+RES_0365,Engineering,24,GPT-4,Monthly,2.4,7,2,94.9
+RES_0366,Humanities,16,Gemini Ultra,Rarely,11.7,3,5,68.51
+RES_0367,Physics,16,Gemini Ultra,Daily,14.5,5,7,72.98
+RES_0368,Social Sciences,6,Gemini Ultra,Monthly,14.6,4,2,66.01
+RES_0369,Computer Science,2,GPT-4,Rarely,13.1,6,6,84.76
+RES_0370,Social Sciences,1,GPT-4,Never,9.4,6,7,76.75
+RES_0371,Humanities,20,Copilot,Never,10.8,2,5,84.47
+RES_0372,Humanities,12,Gemini Ultra,Daily,5.0,2,9,90.39
+RES_0373,Computer Science,14,None,Monthly,0.0,5,4,81.77
+RES_0374,Physics,10,Gemini Ultra,Weekly,9.8,2,10,85.04
+RES_0375,Medicine,4,Llama 3,Monthly,7.4,7,1,97.32
+RES_0376,Computer Science,6,Gemini Ultra,Never,7.7,4,8,71.93
+RES_0377,Medicine,3,Copilot,Rarely,11.6,5,8,74.33
+RES_0378,Engineering,3,Llama 3,Weekly,4.9,7,7,88.64
+RES_0379,Medicine,15,Gemini Ultra,Daily,5.5,5,8,84.39
+RES_0380,Physics,1,GPT-4,Weekly,13.9,7,2,67.12
+RES_0381,Engineering,3,Claude 3,Daily,1.8,1,3,75.01
+RES_0382,Medicine,6,Gemini Ultra,Weekly,7.8,3,9,78.67
+RES_0383,Engineering,9,GPT-4,Daily,13.8,4,1,76.73
+RES_0384,Medicine,2,GPT-4,Daily,9.5,9,8,67.11
+RES_0385,Physics,11,Claude 3,Weekly,8.6,4,8,96.88
+RES_0386,Medicine,9,GPT-4,Weekly,4.5,5,7,90.42
+RES_0387,Medicine,20,GPT-4,Daily,5.8,6,5,79.21
+RES_0388,Medicine,9,Claude 3,Never,12.9,6,4,87.13
+RES_0389,Computer Science,12,None,Weekly,0.0,3,10,95.8
+RES_0390,Computer Science,4,Llama 3,Monthly,8.8,3,10,65.43
+RES_0391,Computer Science,4,GPT-4,Rarely,8.2,5,10,69.99
+RES_0392,Physics,2,GPT-4,Daily,2.4,7,10,81.65
+RES_0393,Engineering,4,Gemini Ultra,Daily,1.2,6,6,91.88
+RES_0394,Humanities,6,Claude 3,Rarely,14.5,6,1,61.45
+RES_0395,Medicine,19,Copilot,Never,6.3,4,5,99.26
+RES_0396,Medicine,4,Gemini Ultra,Rarely,9.4,7,4,78.15
+RES_0397,Physics,31,Gemini Ultra,Weekly,2.1,4,4,74.33
+RES_0398,Medicine,13,GPT-4,Rarely,10.6,8,7,71.68
+RES_0399,Computer Science,11,Gemini Ultra,Daily,14.1,5,9,66.96
+RES_0400,Humanities,8,GPT-4,Rarely,9.1,5,8,91.58
+RES_0401,Social Sciences,7,None,Monthly,0.0,4,8,98.12
+RES_0402,Medicine,5,Gemini Ultra,Weekly,2.8,5,5,76.5
+RES_0403,Computer Science,2,Claude 3,Rarely,9.1,2,6,98.0
+RES_0404,Social Sciences,4,GPT-4,Daily,11.7,3,2,92.87
+RES_0405,Humanities,24,GPT-4,Weekly,6.7,7,3,79.19
+RES_0406,Social Sciences,12,Gemini Ultra,Daily,13.3,5,5,86.89
+RES_0407,Computer Science,23,GPT-4,Never,10.1,6,2,77.36
+RES_0408,Engineering,5,Llama 3,Monthly,13.6,7,3,82.29
+RES_0409,Engineering,3,GPT-4,Never,9.7,2,4,62.32
+RES_0410,Social Sciences,8,Gemini Ultra,Monthly,2.8,7,6,87.78
+RES_0411,Physics,4,Copilot,Rarely,5.3,5,5,62.11
+RES_0412,Social Sciences,9,Gemini Ultra,Weekly,3.8,5,10,92.6
+RES_0413,Medicine,1,Gemini Ultra,Rarely,13.7,7,4,92.92
+RES_0414,Medicine,1,GPT-4,Monthly,11.6,6,2,69.46
+RES_0415,Engineering,10,GPT-4,Monthly,10.5,5,5,72.91
+RES_0416,Physics,24,Gemini Ultra,Monthly,5.2,0,5,79.2
+RES_0417,Computer Science,11,Claude 3,Daily,3.6,7,7,83.81
+RES_0418,Medicine,12,Claude 3,Weekly,11.6,5,1,71.47
+RES_0419,Engineering,8,GPT-4,Rarely,7.6,5,4,83.64
+RES_0420,Humanities,9,GPT-4,Rarely,4.2,6,5,71.88
+RES_0421,Engineering,2,GPT-4,Never,9.6,8,8,62.21
+RES_0422,Medicine,4,Copilot,Monthly,1.6,4,8,60.1
+RES_0423,Medicine,19,GPT-4,Monthly,5.6,6,1,64.04
+RES_0424,Engineering,6,Llama 3,Monthly,7.6,4,5,91.61
+RES_0425,Computer Science,18,GPT-4,Rarely,3.1,1,10,98.36
+RES_0426,Social Sciences,9,Gemini Ultra,Never,14.8,3,1,77.04
+RES_0427,Medicine,9,Claude 3,Daily,3.9,4,1,80.46
+RES_0428,Engineering,6,Copilot,Weekly,2.8,5,2,65.86
+RES_0429,Engineering,13,Copilot,Daily,3.8,4,2,81.99
+RES_0430,Physics,16,Claude 3,Rarely,11.8,5,9,65.77
+RES_0431,Social Sciences,4,None,Monthly,0.0,2,4,84.39
+RES_0432,Humanities,2,None,Weekly,0.0,2,3,97.24
+RES_0433,Computer Science,1,Copilot,Rarely,7.0,5,1,67.81
+RES_0434,Humanities,12,Copilot,Rarely,8.9,5,2,90.51
+RES_0435,Social Sciences,11,GPT-4,Rarely,1.3,5,6,60.94
+RES_0436,Social Sciences,37,Llama 3,Weekly,1.5,6,9,74.98
+RES_0437,Social Sciences,8,GPT-4,Weekly,7.2,4,5,64.42
+RES_0438,Humanities,7,GPT-4,Never,12.4,9,4,74.06
+RES_0439,Social Sciences,10,None,Never,0.0,7,5,66.92
+RES_0440,Engineering,10,Claude 3,Daily,13.4,2,9,74.89
+RES_0441,Humanities,7,Gemini Ultra,Weekly,2.2,3,7,76.66
+RES_0442,Social Sciences,4,Copilot,Weekly,8.5,4,8,71.99
+RES_0443,Engineering,8,Copilot,Weekly,13.8,6,4,86.2
+RES_0444,Physics,8,None,Never,0.0,7,8,96.66
+RES_0445,Social Sciences,8,GPT-4,Rarely,6.4,4,6,75.98
+RES_0446,Humanities,14,GPT-4,Monthly,12.6,5,5,67.67
+RES_0447,Medicine,8,Claude 3,Never,2.9,5,7,70.8
+RES_0448,Social Sciences,2,GPT-4,Weekly,14.1,3,6,94.07
+RES_0449,Medicine,4,GPT-4,Never,11.5,3,3,82.81
+RES_0450,Engineering,7,Claude 3,Daily,14.2,7,5,78.15
+RES_0451,Physics,8,Gemini Ultra,Weekly,10.5,3,9,65.97
+RES_0452,Computer Science,12,Llama 3,Daily,6.1,8,7,77.94
+RES_0453,Physics,8,Claude 3,Weekly,14.1,8,4,71.11
+RES_0454,Social Sciences,1,Gemini Ultra,Never,4.9,5,7,97.63
+RES_0455,Medicine,2,GPT-4,Rarely,5.7,5,5,95.27
+RES_0456,Medicine,12,GPT-4,Monthly,10.8,3,2,63.35
+RES_0457,Humanities,7,Gemini Ultra,Daily,11.7,3,6,80.61
+RES_0458,Medicine,9,Gemini Ultra,Never,14.0,6,7,68.98
+RES_0459,Humanities,6,Gemini Ultra,Rarely,3.9,5,8,76.39
+RES_0460,Engineering,4,GPT-4,Never,12.2,4,6,94.99
+RES_0461,Computer Science,6,Copilot,Daily,11.3,6,8,81.05
+RES_0462,Social Sciences,9,Gemini Ultra,Monthly,1.9,3,7,73.34
+RES_0463,Humanities,8,Llama 3,Never,6.4,12,2,68.29
+RES_0464,Computer Science,16,Gemini Ultra,Weekly,5.0,1,6,91.93
+RES_0465,Medicine,1,Copilot,Rarely,5.3,6,9,84.92
+RES_0466,Medicine,2,Llama 3,Never,14.8,1,6,78.68
+RES_0467,Computer Science,6,Llama 3,Rarely,10.0,6,4,68.68
+RES_0468,Medicine,12,None,Weekly,0.0,1,7,73.34
+RES_0469,Engineering,14,Gemini Ultra,Monthly,11.0,4,3,98.3
+RES_0470,Engineering,5,Claude 3,Monthly,14.7,3,5,80.75
+RES_0471,Computer Science,1,Gemini Ultra,Weekly,6.3,3,1,75.99
+RES_0472,Humanities,5,Claude 3,Rarely,12.2,5,10,80.8
+RES_0473,Humanities,11,GPT-4,Never,7.1,5,3,91.08
+RES_0474,Computer Science,8,Llama 3,Weekly,13.2,5,8,73.57
+RES_0475,Humanities,12,None,Daily,0.0,9,9,67.13
+RES_0476,Humanities,18,None,Rarely,0.0,3,9,83.34
+RES_0477,Engineering,7,Claude 3,Monthly,3.5,3,10,86.54
+RES_0478,Humanities,5,Llama 3,Weekly,14.3,6,2,88.44
+RES_0479,Physics,3,GPT-4,Monthly,4.1,6,4,95.19
+RES_0480,Social Sciences,2,None,Rarely,0.0,3,5,74.81
+RES_0481,Medicine,1,None,Monthly,0.0,7,3,63.01
+RES_0482,Physics,4,Gemini Ultra,Weekly,5.6,4,1,98.24
+RES_0483,Humanities,17,Copilot,Rarely,11.6,1,6,77.36
+RES_0484,Engineering,13,Gemini Ultra,Daily,6.5,7,10,84.87
+RES_0485,Computer Science,5,Llama 3,Weekly,9.5,7,2,86.59
+RES_0486,Humanities,31,GPT-4,Never,7.2,2,9,81.81
+RES_0487,Engineering,5,Claude 3,Weekly,11.4,5,1,68.19
+RES_0488,Social Sciences,19,Gemini Ultra,Rarely,4.2,6,9,90.13
+RES_0489,Humanities,23,Gemini Ultra,Weekly,1.8,9,7,92.07
+RES_0490,Computer Science,11,Claude 3,Daily,5.2,3,10,82.06
+RES_0491,Engineering,4,None,Daily,0.0,4,2,79.49
+RES_0492,Engineering,6,GPT-4,Never,7.6,10,6,64.55
+RES_0493,Engineering,9,Llama 3,Monthly,3.4,4,8,63.35
+RES_0494,Social Sciences,2,Gemini Ultra,Rarely,6.0,4,2,73.55
+RES_0495,Humanities,3,Gemini Ultra,Rarely,6.6,4,5,72.4
+RES_0496,Social Sciences,3,Gemini Ultra,Monthly,1.8,7,6,98.05
+RES_0497,Medicine,12,GPT-4,Daily,9.2,8,3,91.27
+RES_0498,Medicine,18,GPT-4,Daily,13.4,6,2,86.33
+RES_0499,Humanities,13,Gemini Ultra,Weekly,3.1,6,6,80.65
+RES_0500,Social Sciences,16,Llama 3,Never,9.4,3,3,66.68
+RES_0501,Computer Science,4,GPT-4,Never,10.3,5,2,99.04
+RES_0502,Engineering,6,Gemini Ultra,Never,6.9,6,1,74.96
+RES_0503,Engineering,6,Claude 3,Weekly,10.8,2,8,64.27
+RES_0504,Humanities,11,Gemini Ultra,Never,6.8,8,1,79.7
+RES_0505,Medicine,4,Copilot,Monthly,8.1,5,5,94.87
+RES_0506,Medicine,15,GPT-4,Weekly,1.1,4,6,95.4
+RES_0507,Engineering,22,GPT-4,Monthly,10.7,4,3,60.44
+RES_0508,Humanities,12,Gemini Ultra,Weekly,10.3,2,7,95.36
+RES_0509,Social Sciences,6,Gemini Ultra,Never,1.5,5,2,70.83
+RES_0510,Medicine,4,Gemini Ultra,Monthly,6.2,5,7,61.55
+RES_0511,Social Sciences,3,Copilot,Monthly,14.7,4,2,93.83
+RES_0512,Medicine,1,Copilot,Monthly,6.9,2,5,94.47
+RES_0513,Medicine,6,None,Weekly,0.0,4,7,83.79
+RES_0514,Physics,6,Llama 3,Rarely,8.0,4,3,82.92
+RES_0515,Medicine,15,Claude 3,Never,13.7,1,4,92.44
+RES_0516,Computer Science,5,Claude 3,Monthly,11.0,8,1,91.37
+RES_0517,Humanities,7,GPT-4,Rarely,9.1,4,3,95.52
+RES_0518,Humanities,10,Llama 3,Never,12.2,10,9,82.05
+RES_0519,Social Sciences,11,GPT-4,Never,13.1,6,10,98.61
+RES_0520,Medicine,14,None,Monthly,0.0,3,5,99.75
+RES_0521,Computer Science,9,Llama 3,Monthly,7.4,6,8,64.65
+RES_0522,Social Sciences,2,Llama 3,Weekly,7.7,4,2,93.9
+RES_0523,Physics,11,Claude 3,Rarely,6.4,3,3,79.94
+RES_0524,Social Sciences,4,GPT-4,Rarely,14.5,2,7,75.46
+RES_0525,Social Sciences,19,GPT-4,Monthly,10.8,3,10,84.46
+RES_0526,Medicine,8,Claude 3,Never,2.2,5,4,62.23
+RES_0527,Physics,9,GPT-4,Monthly,13.1,3,9,80.21
+RES_0528,Social Sciences,38,Gemini Ultra,Never,7.7,4,7,94.75
+RES_0529,Computer Science,14,Copilot,Never,2.0,3,1,68.52
+RES_0530,Computer Science,11,Copilot,Monthly,8.7,6,4,77.01
+RES_0531,Humanities,7,Gemini Ultra,Daily,6.8,5,10,97.49
+RES_0532,Physics,2,GPT-4,Rarely,13.3,5,6,77.1
+RES_0533,Physics,7,Copilot,Never,3.9,4,6,74.3
+RES_0534,Humanities,3,Copilot,Never,12.6,4,10,77.58
+RES_0535,Social Sciences,24,GPT-4,Daily,8.8,6,6,80.73
+RES_0536,Physics,11,Gemini Ultra,Weekly,1.8,4,5,85.22
+RES_0537,Computer Science,18,GPT-4,Daily,14.6,6,3,91.95
+RES_0538,Computer Science,4,Copilot,Daily,8.2,4,2,78.04
+RES_0539,Medicine,4,None,Never,0.0,5,3,92.62
+RES_0540,Physics,13,GPT-4,Rarely,5.1,5,9,81.3
+RES_0541,Social Sciences,3,Copilot,Daily,7.6,4,3,73.51
+RES_0542,Humanities,5,Gemini Ultra,Weekly,13.0,5,3,86.25
+RES_0543,Humanities,25,None,Monthly,0.0,3,1,88.64
+RES_0544,Social Sciences,6,Claude 3,Daily,5.3,4,2,82.27
+RES_0545,Engineering,2,Copilot,Daily,3.7,6,3,62.26
+RES_0546,Medicine,1,GPT-4,Weekly,2.8,6,2,66.78
+RES_0547,Humanities,1,Claude 3,Rarely,5.2,1,8,71.38
+RES_0548,Physics,19,GPT-4,Daily,11.9,3,6,71.28
+RES_0549,Medicine,5,None,Daily,0.0,4,7,86.87
+RES_0550,Physics,38,Copilot,Rarely,7.6,6,1,60.73
+RES_0551,Computer Science,22,Copilot,Weekly,4.2,4,6,90.15
+RES_0552,Medicine,29,None,Daily,0.0,3,2,70.59
+RES_0553,Humanities,16,GPT-4,Rarely,3.3,14,6,72.37
+RES_0554,Medicine,12,Claude 3,Daily,5.7,5,3,81.06
+RES_0555,Medicine,4,GPT-4,Monthly,14.2,4,7,68.62
+RES_0556,Medicine,8,GPT-4,Never,5.8,5,3,95.29
+RES_0557,Engineering,13,GPT-4,Monthly,14.8,5,9,63.41
+RES_0558,Medicine,16,Claude 3,Daily,7.8,7,3,77.73
+RES_0559,Physics,2,GPT-4,Weekly,3.5,7,7,93.89
+RES_0560,Computer Science,7,GPT-4,Never,13.5,7,4,84.57
+RES_0561,Social Sciences,7,GPT-4,Monthly,7.4,2,8,71.66
+RES_0562,Medicine,7,GPT-4,Rarely,10.9,5,2,76.79
+RES_0563,Humanities,3,None,Weekly,0.0,3,8,88.2
+RES_0564,Medicine,26,Gemini Ultra,Monthly,14.8,7,9,98.83
+RES_0565,Humanities,6,None,Rarely,0.0,2,8,95.64
+RES_0566,Physics,3,Claude 3,Daily,1.7,6,6,73.66
+RES_0567,Humanities,27,GPT-4,Rarely,2.4,4,10,99.83
+RES_0568,Social Sciences,22,Gemini Ultra,Monthly,11.1,8,1,60.14
+RES_0569,Computer Science,9,Claude 3,Monthly,4.9,5,7,61.1
+RES_0570,Humanities,5,GPT-4,Daily,3.6,1,1,92.87
+RES_0571,Humanities,1,GPT-4,Rarely,1.6,2,7,67.96
+RES_0572,Computer Science,12,GPT-4,Rarely,1.3,3,2,62.42
+RES_0573,Social Sciences,5,GPT-4,Daily,11.8,6,8,69.46
+RES_0574,Medicine,8,Claude 3,Rarely,2.9,8,2,77.0
+RES_0575,Humanities,25,Gemini Ultra,Daily,7.5,4,3,89.15
+RES_0576,Computer Science,5,GPT-4,Weekly,9.5,3,3,84.91
+RES_0577,Physics,11,GPT-4,Monthly,7.0,6,1,69.48
+RES_0578,Computer Science,14,Copilot,Weekly,1.4,6,5,80.08
+RES_0579,Physics,19,GPT-4,Never,12.0,8,5,96.96
+RES_0580,Social Sciences,7,Claude 3,Never,1.1,6,10,92.52
+RES_0581,Medicine,7,Copilot,Never,11.7,6,5,72.9
+RES_0582,Computer Science,6,GPT-4,Daily,13.5,5,9,99.19
+RES_0583,Engineering,10,GPT-4,Rarely,7.1,4,6,88.27
+RES_0584,Humanities,22,Claude 3,Weekly,8.5,5,6,62.49
+RES_0585,Social Sciences,6,Claude 3,Weekly,7.7,5,3,61.4
+RES_0586,Computer Science,1,Llama 3,Weekly,6.4,6,5,66.72
+RES_0587,Humanities,15,Copilot,Weekly,13.4,11,10,89.04
+RES_0588,Computer Science,8,GPT-4,Never,13.5,8,7,67.33
+RES_0589,Physics,12,Llama 3,Weekly,5.7,7,3,80.41
+RES_0590,Computer Science,1,Llama 3,Rarely,9.6,7,2,63.72
+RES_0591,Engineering,5,GPT-4,Never,14.0,4,5,96.74
+RES_0592,Computer Science,14,Gemini Ultra,Weekly,14.5,8,3,73.72
+RES_0593,Computer Science,2,GPT-4,Daily,8.1,6,5,96.23
+RES_0594,Engineering,11,Claude 3,Monthly,7.3,2,9,97.7
+RES_0595,Social Sciences,8,GPT-4,Monthly,4.9,4,10,60.24
+RES_0596,Computer Science,4,Claude 3,Monthly,14.4,0,1,78.52
+RES_0597,Engineering,4,Claude 3,Never,3.0,6,4,60.98
+RES_0598,Humanities,3,Copilot,Weekly,9.1,0,10,96.26
+RES_0599,Physics,8,GPT-4,Never,5.0,7,5,80.68
+RES_0600,Physics,9,Claude 3,Rarely,4.9,9,2,62.99
+RES_0601,Computer Science,6,Claude 3,Daily,6.7,7,2,64.4
+RES_0602,Social Sciences,3,Gemini Ultra,Daily,15.0,2,1,75.3
+RES_0603,Social Sciences,11,Llama 3,Monthly,1.8,4,8,97.52
+RES_0604,Humanities,15,Gemini Ultra,Monthly,9.1,8,2,87.65
+RES_0605,Computer Science,13,Gemini Ultra,Monthly,2.2,5,3,94.62
+RES_0606,Physics,29,Copilot,Weekly,3.2,5,2,74.62
+RES_0607,Social Sciences,7,Claude 3,Rarely,7.2,6,4,61.72
+RES_0608,Computer Science,20,Llama 3,Rarely,8.1,2,1,98.88
+RES_0609,Social Sciences,4,Copilot,Rarely,4.6,4,3,60.69
+RES_0610,Engineering,4,None,Rarely,0.0,7,5,97.81
+RES_0611,Social Sciences,9,Copilot,Monthly,5.4,3,10,74.71
+RES_0612,Physics,23,Claude 3,Daily,2.2,6,1,60.4
+RES_0613,Medicine,6,GPT-4,Monthly,5.2,2,4,87.5
+RES_0614,Humanities,1,Claude 3,Rarely,14.5,8,6,99.12
+RES_0615,Humanities,15,Gemini Ultra,Monthly,14.2,10,4,98.53
+RES_0616,Physics,7,Claude 3,Rarely,5.7,5,7,66.42
+RES_0617,Social Sciences,10,Claude 3,Never,9.0,4,7,67.23
+RES_0618,Computer Science,4,Copilot,Daily,13.7,4,6,82.57
+RES_0619,Social Sciences,9,Claude 3,Never,1.1,8,9,85.43
+RES_0620,Physics,2,Copilot,Weekly,12.3,9,2,89.5
+RES_0621,Humanities,27,Claude 3,Monthly,14.3,7,10,67.22
+RES_0622,Social Sciences,17,Claude 3,Weekly,2.3,7,8,98.26
+RES_0623,Humanities,8,Claude 3,Monthly,3.3,3,8,85.49
+RES_0624,Computer Science,15,Gemini Ultra,Never,14.5,8,10,93.8
+RES_0625,Humanities,4,GPT-4,Rarely,8.5,7,4,81.55
+RES_0626,Humanities,16,GPT-4,Rarely,1.2,2,6,76.53
+RES_0627,Medicine,6,None,Monthly,0.0,5,6,98.99
+RES_0628,Medicine,5,GPT-4,Rarely,4.6,7,5,83.23
+RES_0629,Engineering,3,Llama 3,Never,7.3,6,1,94.59
+RES_0630,Medicine,11,Llama 3,Rarely,10.7,1,3,98.04
+RES_0631,Humanities,8,Claude 3,Never,11.3,3,7,86.95
+RES_0632,Physics,21,Gemini Ultra,Weekly,14.9,4,8,81.9
+RES_0633,Humanities,3,GPT-4,Never,5.0,4,2,60.14
+RES_0634,Physics,11,Llama 3,Daily,8.5,3,3,61.6
+RES_0635,Physics,18,Claude 3,Daily,8.5,7,4,68.01
+RES_0636,Medicine,9,Gemini Ultra,Daily,6.7,9,5,67.42
+RES_0637,Social Sciences,6,GPT-4,Monthly,3.4,4,3,70.16
+RES_0638,Computer Science,9,Llama 3,Monthly,14.7,3,5,72.17
+RES_0639,Medicine,20,GPT-4,Monthly,12.9,4,8,74.37
+RES_0640,Medicine,20,GPT-4,Never,8.0,4,8,76.78
+RES_0641,Social Sciences,7,GPT-4,Monthly,9.4,6,2,63.94
+RES_0642,Computer Science,19,GPT-4,Weekly,4.2,3,6,61.69
+RES_0643,Humanities,8,Copilot,Daily,8.6,10,4,86.89
+RES_0644,Engineering,15,GPT-4,Never,10.7,5,9,81.44
+RES_0645,Engineering,12,None,Daily,0.0,5,10,77.72
+RES_0646,Humanities,6,None,Monthly,0.0,3,2,85.31
+RES_0647,Medicine,3,Llama 3,Never,8.2,2,8,93.02
+RES_0648,Computer Science,18,GPT-4,Rarely,14.9,7,1,77.06
+RES_0649,Medicine,22,Claude 3,Weekly,9.6,5,6,85.58
+RES_0650,Physics,11,Gemini Ultra,Monthly,6.2,4,10,98.05
+RES_0651,Medicine,8,Claude 3,Monthly,11.8,6,1,93.5
+RES_0652,Medicine,2,GPT-4,Weekly,3.4,5,2,77.0
+RES_0653,Humanities,18,Llama 3,Weekly,6.4,4,3,85.72
+RES_0654,Humanities,10,Copilot,Rarely,5.9,7,9,67.07
+RES_0655,Humanities,6,Gemini Ultra,Monthly,7.0,4,5,82.36
+RES_0656,Engineering,15,GPT-4,Monthly,11.9,2,10,99.15
+RES_0657,Physics,2,Gemini Ultra,Daily,7.8,3,10,80.68
+RES_0658,Humanities,3,GPT-4,Never,12.1,8,2,97.01
+RES_0659,Computer Science,4,GPT-4,Never,9.1,5,10,76.25
+RES_0660,Engineering,12,Copilot,Daily,5.8,6,5,99.85
+RES_0661,Social Sciences,9,GPT-4,Never,12.3,2,5,83.11
+RES_0662,Computer Science,13,GPT-4,Weekly,4.3,3,1,61.69
+RES_0663,Computer Science,17,GPT-4,Never,4.1,3,3,83.41
+RES_0664,Humanities,13,Copilot,Never,8.1,7,5,70.96
+RES_0665,Social Sciences,27,Gemini Ultra,Daily,4.7,5,9,61.3
+RES_0666,Social Sciences,17,Gemini Ultra,Rarely,1.1,2,10,92.75
+RES_0667,Engineering,7,Gemini Ultra,Never,10.1,2,1,71.0
+RES_0668,Social Sciences,5,GPT-4,Never,8.2,7,8,91.78
+RES_0669,Physics,7,Claude 3,Rarely,7.2,8,1,71.5
+RES_0670,Humanities,13,Claude 3,Daily,14.5,4,9,67.75
+RES_0671,Social Sciences,5,GPT-4,Rarely,9.0,4,6,98.86
+RES_0672,Engineering,14,Claude 3,Daily,13.1,4,1,74.43
+RES_0673,Physics,12,None,Weekly,0.0,3,8,83.99
+RES_0674,Medicine,3,GPT-4,Daily,3.0,4,5,84.34
+RES_0675,Medicine,17,GPT-4,Weekly,9.0,6,7,82.36
+RES_0676,Physics,10,GPT-4,Weekly,13.2,5,7,96.5
+RES_0677,Engineering,26,GPT-4,Daily,9.2,5,7,86.91
+RES_0678,Physics,8,None,Monthly,0.0,3,6,76.11
+RES_0679,Humanities,6,Claude 3,Daily,11.1,6,8,94.41
+RES_0680,Humanities,3,Claude 3,Never,6.2,4,9,67.22
+RES_0681,Medicine,3,Gemini Ultra,Never,2.3,2,2,81.72
+RES_0682,Social Sciences,16,GPT-4,Monthly,7.4,5,7,97.93
+RES_0683,Engineering,24,Claude 3,Weekly,6.5,7,2,84.95
+RES_0684,Medicine,7,Claude 3,Monthly,13.1,8,6,92.6
+RES_0685,Social Sciences,7,Llama 3,Never,4.4,0,2,86.08
+RES_0686,Social Sciences,8,None,Monthly,0.0,5,10,93.49
+RES_0687,Humanities,18,Gemini Ultra,Daily,14.5,4,6,97.69
+RES_0688,Computer Science,3,Claude 3,Monthly,14.4,6,2,70.89
+RES_0689,Computer Science,9,Copilot,Weekly,4.5,4,1,66.77
+RES_0690,Physics,16,GPT-4,Daily,5.9,7,7,79.31
+RES_0691,Humanities,12,GPT-4,Rarely,13.5,2,3,88.0
+RES_0692,Social Sciences,1,GPT-4,Never,14.5,3,4,69.06
+RES_0693,Engineering,13,Claude 3,Never,7.2,3,6,60.16
+RES_0694,Computer Science,12,Llama 3,Monthly,5.5,5,5,73.68
+RES_0695,Social Sciences,20,Gemini Ultra,Daily,8.4,6,4,98.66
+RES_0696,Computer Science,23,None,Rarely,0.0,9,9,87.73
+RES_0697,Computer Science,20,Llama 3,Daily,10.6,6,6,76.01
+RES_0698,Computer Science,8,Llama 3,Never,4.8,7,6,67.68
+RES_0699,Engineering,1,GPT-4,Daily,11.3,2,2,74.21
+RES_0700,Humanities,7,GPT-4,Rarely,1.7,2,6,66.78
+RES_0701,Engineering,8,Llama 3,Monthly,1.7,8,7,64.24
+RES_0702,Medicine,24,Claude 3,Weekly,6.4,8,8,96.18
+RES_0703,Social Sciences,4,Copilot,Daily,5.9,8,8,99.81
+RES_0704,Humanities,2,GPT-4,Weekly,5.4,7,9,66.55
+RES_0705,Humanities,5,GPT-4,Never,7.9,6,10,62.18
+RES_0706,Humanities,4,Claude 3,Monthly,5.5,2,3,73.16
+RES_0707,Humanities,2,GPT-4,Monthly,3.7,7,10,78.42
+RES_0708,Engineering,7,GPT-4,Daily,5.3,6,7,68.17
+RES_0709,Humanities,8,Gemini Ultra,Monthly,14.6,5,7,72.03
+RES_0710,Physics,2,GPT-4,Daily,6.8,6,1,68.01
+RES_0711,Social Sciences,6,Gemini Ultra,Daily,7.2,4,8,90.89
+RES_0712,Humanities,4,GPT-4,Weekly,9.1,4,4,88.43
+RES_0713,Social Sciences,9,GPT-4,Monthly,14.8,4,5,85.33
+RES_0714,Physics,9,Claude 3,Daily,4.4,5,6,75.45
+RES_0715,Physics,4,Copilot,Weekly,10.5,4,3,96.27
+RES_0716,Social Sciences,17,Claude 3,Rarely,11.0,7,5,98.68
+RES_0717,Computer Science,8,Gemini Ultra,Weekly,9.5,2,10,66.93
+RES_0718,Medicine,4,GPT-4,Weekly,2.2,4,5,68.9
+RES_0719,Computer Science,1,Gemini Ultra,Daily,10.5,1,1,80.97
+RES_0720,Computer Science,10,GPT-4,Never,1.9,6,3,63.64
+RES_0721,Engineering,12,Gemini Ultra,Never,9.3,1,3,77.41
+RES_0722,Computer Science,5,Llama 3,Never,11.4,6,1,83.21
+RES_0723,Humanities,9,None,Weekly,0.0,6,7,80.83
+RES_0724,Engineering,23,Claude 3,Daily,4.0,0,1,73.2
+RES_0725,Engineering,15,GPT-4,Monthly,12.8,6,7,81.64
+RES_0726,Physics,1,GPT-4,Weekly,1.4,1,4,98.26
+RES_0727,Computer Science,4,Copilot,Weekly,12.8,4,9,68.22
+RES_0728,Physics,7,Llama 3,Daily,7.4,6,7,86.13
+RES_0729,Social Sciences,8,Gemini Ultra,Rarely,4.0,7,5,61.73
+RES_0730,Medicine,9,GPT-4,Weekly,2.9,6,7,62.65
+RES_0731,Engineering,11,Claude 3,Rarely,14.3,3,9,82.02
+RES_0732,Social Sciences,7,GPT-4,Rarely,2.0,7,10,64.19
+RES_0733,Social Sciences,8,None,Never,0.0,6,6,60.89
+RES_0734,Humanities,16,Gemini Ultra,Daily,3.8,5,1,66.84
+RES_0735,Medicine,10,None,Rarely,0.0,7,6,82.54
+RES_0736,Social Sciences,2,GPT-4,Daily,5.9,4,1,88.06
+RES_0737,Social Sciences,9,Gemini Ultra,Never,9.7,7,4,68.08
+RES_0738,Medicine,7,Gemini Ultra,Daily,8.6,1,8,86.66
+RES_0739,Medicine,1,Claude 3,Weekly,2.8,2,5,67.28
+RES_0740,Social Sciences,9,Copilot,Rarely,5.1,2,5,84.48
+RES_0741,Medicine,3,None,Daily,0.0,6,10,76.44
+RES_0742,Social Sciences,16,Copilot,Monthly,4.3,8,8,86.09
+RES_0743,Social Sciences,11,Gemini Ultra,Daily,4.0,6,8,99.7
+RES_0744,Humanities,2,GPT-4,Rarely,6.8,0,1,97.42
+RES_0745,Computer Science,15,GPT-4,Never,10.9,10,5,60.17
+RES_0746,Social Sciences,20,None,Never,0.0,2,5,95.33
+RES_0747,Physics,6,GPT-4,Rarely,4.0,5,8,62.65
+RES_0748,Engineering,7,Gemini Ultra,Weekly,6.1,8,1,98.03
+RES_0749,Computer Science,14,Gemini Ultra,Weekly,6.5,5,7,71.24
+RES_0750,Computer Science,19,Gemini Ultra,Never,14.7,4,7,75.24
+RES_0751,Computer Science,1,None,Never,0.0,3,9,63.66
+RES_0752,Humanities,3,Claude 3,Rarely,14.4,7,2,64.48
+RES_0753,Social Sciences,5,Claude 3,Weekly,12.2,7,3,89.0
+RES_0754,Humanities,6,GPT-4,Never,4.4,3,4,97.68
+RES_0755,Social Sciences,14,Claude 3,Weekly,2.0,3,1,84.37
+RES_0756,Humanities,19,GPT-4,Never,5.4,2,7,88.56
+RES_0757,Humanities,20,Claude 3,Daily,4.7,2,10,90.4
+RES_0758,Engineering,1,Copilot,Monthly,8.1,7,3,70.49
+RES_0759,Physics,4,None,Daily,0.0,4,3,61.8
+RES_0760,Humanities,5,GPT-4,Never,11.9,1,3,60.07
+RES_0761,Engineering,4,Claude 3,Monthly,13.0,3,8,73.99
+RES_0762,Medicine,11,None,Monthly,0.0,10,9,69.63
+RES_0763,Physics,12,GPT-4,Never,12.8,3,10,62.49
+RES_0764,Humanities,8,GPT-4,Never,6.0,6,2,67.16
+RES_0765,Computer Science,7,GPT-4,Weekly,10.6,4,10,64.97
+RES_0766,Medicine,6,Llama 3,Never,5.4,5,10,96.5
+RES_0767,Medicine,6,GPT-4,Rarely,1.9,3,1,65.6
+RES_0768,Engineering,23,None,Never,0.0,7,9,81.45
+RES_0769,Medicine,13,Claude 3,Rarely,10.8,5,6,83.66
+RES_0770,Physics,6,Llama 3,Never,1.1,2,9,81.69
+RES_0771,Humanities,7,GPT-4,Weekly,6.7,6,6,63.95
+RES_0772,Humanities,11,Claude 3,Rarely,5.6,3,2,72.72
+RES_0773,Computer Science,2,Gemini Ultra,Daily,10.7,2,1,62.05
+RES_0774,Engineering,9,Gemini Ultra,Rarely,11.7,7,8,75.79
+RES_0775,Computer Science,13,Gemini Ultra,Weekly,5.3,6,3,67.53
+RES_0776,Medicine,12,Llama 3,Rarely,12.4,3,1,82.41
+RES_0777,Computer Science,4,None,Never,0.0,5,8,87.64
+RES_0778,Physics,4,Copilot,Never,5.1,7,1,81.23
+RES_0779,Humanities,1,Gemini Ultra,Weekly,7.2,4,8,77.33
+RES_0780,Medicine,14,GPT-4,Monthly,11.2,4,1,75.45
+RES_0781,Computer Science,30,GPT-4,Never,10.7,3,9,93.58
+RES_0782,Engineering,3,GPT-4,Daily,14.8,6,9,68.75
+RES_0783,Physics,17,Gemini Ultra,Weekly,4.2,4,9,89.3
+RES_0784,Physics,28,Claude 3,Rarely,10.3,5,3,90.22
+RES_0785,Computer Science,5,Claude 3,Rarely,9.5,7,4,76.73
+RES_0786,Humanities,7,Copilot,Daily,13.8,4,5,71.86
+RES_0787,Computer Science,10,Copilot,Never,3.2,3,6,78.77
+RES_0788,Medicine,11,None,Weekly,0.0,1,9,63.72
+RES_0789,Computer Science,10,Claude 3,Daily,11.5,5,4,61.83
+RES_0790,Physics,6,Gemini Ultra,Never,9.0,8,6,64.45
+RES_0791,Computer Science,13,GPT-4,Weekly,4.8,5,1,67.47
+RES_0792,Humanities,6,GPT-4,Rarely,7.6,5,2,80.12
+RES_0793,Engineering,11,GPT-4,Weekly,5.7,3,8,93.88
+RES_0794,Social Sciences,8,Claude 3,Monthly,9.1,3,4,69.4
+RES_0795,Computer Science,1,Claude 3,Weekly,13.4,6,10,97.31
+RES_0796,Humanities,19,Copilot,Monthly,9.0,5,7,98.1
+RES_0797,Humanities,5,GPT-4,Weekly,9.8,7,4,98.26
+RES_0798,Engineering,20,Gemini Ultra,Monthly,8.3,6,9,93.42
+RES_0799,Physics,17,Llama 3,Rarely,1.7,8,9,74.52
+RES_0800,Humanities,9,GPT-4,Never,4.3,8,4,62.9
+RES_0801,Humanities,12,Claude 3,Monthly,7.9,8,8,82.7
+RES_0802,Humanities,13,GPT-4,Monthly,5.3,9,6,82.29
+RES_0803,Humanities,7,Llama 3,Rarely,3.5,5,1,93.91
+RES_0804,Medicine,7,Claude 3,Monthly,8.1,3,7,99.74
+RES_0805,Medicine,12,GPT-4,Daily,5.5,4,1,80.28
+RES_0806,Physics,8,GPT-4,Rarely,4.6,5,3,73.77
+RES_0807,Computer Science,6,Llama 3,Daily,7.5,6,8,67.42
+RES_0808,Humanities,4,None,Rarely,0.0,7,9,60.19
+RES_0809,Engineering,11,Claude 3,Monthly,2.9,4,3,80.31
+RES_0810,Computer Science,4,Gemini Ultra,Daily,14.0,6,1,82.17
+RES_0811,Engineering,15,Gemini Ultra,Monthly,13.1,13,1,92.92
+RES_0812,Computer Science,16,None,Rarely,0.0,3,7,80.13
+RES_0813,Physics,12,Copilot,Monthly,10.9,7,5,96.57
+RES_0814,Humanities,13,Llama 3,Daily,2.5,7,1,85.06
+RES_0815,Humanities,12,Gemini Ultra,Daily,11.9,2,6,93.53
+RES_0816,Social Sciences,14,Copilot,Monthly,12.3,5,6,65.92
+RES_0817,Engineering,14,Claude 3,Weekly,11.7,2,4,94.13
+RES_0818,Computer Science,10,Claude 3,Rarely,2.6,4,7,86.94
+RES_0819,Computer Science,17,GPT-4,Rarely,10.0,3,7,66.79
+RES_0820,Medicine,7,Copilot,Monthly,12.7,3,9,67.57
+RES_0821,Social Sciences,4,Copilot,Weekly,9.1,1,1,96.97
+RES_0822,Medicine,4,GPT-4,Daily,10.0,7,5,61.29
+RES_0823,Medicine,6,Llama 3,Never,7.4,4,10,78.46
+RES_0824,Medicine,1,Claude 3,Never,8.4,9,3,72.51
+RES_0825,Engineering,9,GPT-4,Monthly,1.5,4,7,86.54
+RES_0826,Engineering,13,None,Weekly,0.0,6,4,93.5
+RES_0827,Physics,15,GPT-4,Weekly,9.9,3,4,74.38
+RES_0828,Physics,1,GPT-4,Rarely,2.1,8,1,77.03
+RES_0829,Medicine,4,Llama 3,Daily,7.1,6,1,99.18
+RES_0830,Social Sciences,14,Gemini Ultra,Weekly,5.1,5,10,91.28
+RES_0831,Computer Science,7,GPT-4,Never,8.6,3,2,95.8
+RES_0832,Engineering,13,Gemini Ultra,Daily,2.9,11,2,77.51
+RES_0833,Social Sciences,2,Llama 3,Daily,10.7,7,1,69.34
+RES_0834,Humanities,20,GPT-4,Monthly,12.1,6,8,76.43
+RES_0835,Engineering,2,GPT-4,Weekly,3.3,6,6,88.57
+RES_0836,Engineering,9,Llama 3,Monthly,2.5,6,6,64.37
+RES_0837,Physics,9,GPT-4,Weekly,3.0,6,10,70.79
+RES_0838,Computer Science,5,None,Rarely,0.0,5,10,61.86
+RES_0839,Computer Science,11,Copilot,Monthly,13.3,8,9,77.25
+RES_0840,Humanities,12,None,Monthly,0.0,6,5,93.02
+RES_0841,Humanities,11,GPT-4,Never,8.4,8,4,60.98
+RES_0842,Engineering,5,None,Monthly,0.0,13,6,86.95
+RES_0843,Medicine,4,Claude 3,Weekly,7.5,4,8,97.21
+RES_0844,Physics,5,Claude 3,Never,2.5,1,1,69.45
+RES_0845,Physics,4,GPT-4,Monthly,10.1,4,7,87.68
+RES_0846,Engineering,17,GPT-4,Monthly,13.2,2,8,98.91
+RES_0847,Social Sciences,6,Gemini Ultra,Rarely,12.6,7,9,98.39
+RES_0848,Medicine,9,Claude 3,Monthly,9.8,4,8,69.37
+RES_0849,Engineering,14,GPT-4,Daily,2.1,5,7,64.0
+RES_0850,Medicine,3,Gemini Ultra,Never,2.6,8,3,65.92
+RES_0851,Medicine,2,GPT-4,Daily,1.7,6,2,88.01
+RES_0852,Medicine,4,Llama 3,Never,4.6,5,3,88.96
+RES_0853,Engineering,10,Claude 3,Rarely,2.9,2,4,86.9
+RES_0854,Physics,9,Copilot,Monthly,4.6,6,4,73.41
+RES_0855,Physics,11,Copilot,Monthly,6.4,5,6,66.77
+RES_0856,Medicine,7,Claude 3,Monthly,14.2,6,7,83.17
+RES_0857,Social Sciences,1,Claude 3,Never,9.5,3,4,79.3
+RES_0858,Computer Science,7,Claude 3,Monthly,12.7,6,10,89.08
+RES_0859,Engineering,16,Copilot,Daily,10.9,6,6,77.61
+RES_0860,Computer Science,19,Claude 3,Monthly,2.6,4,9,73.51
+RES_0861,Social Sciences,8,GPT-4,Rarely,11.3,7,6,71.71
+RES_0862,Engineering,9,GPT-4,Daily,4.9,4,3,68.44
+RES_0863,Medicine,12,Claude 3,Monthly,9.9,0,1,70.6
+RES_0864,Physics,18,Claude 3,Monthly,5.8,9,10,63.78
+RES_0865,Computer Science,8,Copilot,Weekly,15.0,1,10,73.84
+RES_0866,Humanities,12,GPT-4,Never,4.7,6,5,61.46
+RES_0867,Humanities,5,Claude 3,Daily,4.9,4,10,67.44
+RES_0868,Social Sciences,2,Copilot,Weekly,14.0,5,10,89.8
+RES_0869,Medicine,5,Copilot,Rarely,1.3,6,3,72.99
+RES_0870,Computer Science,21,Claude 3,Never,10.8,8,8,86.66
+RES_0871,Medicine,13,Claude 3,Daily,11.2,4,10,88.6
+RES_0872,Computer Science,2,Claude 3,Monthly,12.7,5,1,83.19
+RES_0873,Social Sciences,13,None,Daily,0.0,10,2,98.25
+RES_0874,Social Sciences,3,GPT-4,Monthly,14.6,5,3,60.86
+RES_0875,Humanities,11,None,Never,0.0,7,3,89.47
+RES_0876,Medicine,3,Gemini Ultra,Monthly,14.7,6,8,98.26
+RES_0877,Engineering,2,Llama 3,Rarely,1.9,4,5,94.4
+RES_0878,Humanities,24,GPT-4,Monthly,12.5,3,8,66.7
+RES_0879,Medicine,6,Claude 3,Rarely,10.0,5,6,73.04
+RES_0880,Humanities,12,Claude 3,Never,10.1,4,2,66.88
+RES_0881,Engineering,8,GPT-4,Never,2.8,4,4,83.99
+RES_0882,Physics,3,Gemini Ultra,Daily,10.1,5,9,88.42
+RES_0883,Physics,6,None,Rarely,0.0,2,4,72.65
+RES_0884,Physics,3,Llama 3,Rarely,14.8,7,5,81.53
+RES_0885,Physics,35,Gemini Ultra,Weekly,13.8,3,5,87.57
+RES_0886,Computer Science,14,GPT-4,Weekly,7.1,5,10,76.81
+RES_0887,Physics,8,Claude 3,Weekly,1.6,6,8,94.08
+RES_0888,Engineering,12,GPT-4,Monthly,6.1,8,6,90.78
+RES_0889,Social Sciences,13,Gemini Ultra,Weekly,12.6,5,10,62.58
+RES_0890,Social Sciences,13,None,Rarely,0.0,3,7,84.78
+RES_0891,Computer Science,13,Gemini Ultra,Monthly,10.8,3,6,69.39
+RES_0892,Physics,12,GPT-4,Never,7.4,5,5,82.24
+RES_0893,Physics,9,Claude 3,Daily,1.8,7,5,98.18
+RES_0894,Physics,22,Llama 3,Weekly,7.0,5,3,95.07
+RES_0895,Humanities,9,Claude 3,Never,7.6,5,7,76.14
+RES_0896,Medicine,8,Copilot,Rarely,14.0,10,10,71.63
+RES_0897,Humanities,9,Copilot,Daily,10.0,2,5,69.35
+RES_0898,Medicine,10,Gemini Ultra,Never,5.4,6,7,81.25
+RES_0899,Physics,1,Claude 3,Daily,8.4,7,2,64.56
+RES_0900,Physics,4,GPT-4,Weekly,1.9,4,9,81.92
+RES_0901,Humanities,7,GPT-4,Rarely,14.6,11,8,60.05
+RES_0902,Humanities,1,Claude 3,Daily,6.0,5,5,72.92
+RES_0903,Medicine,8,Claude 3,Never,7.7,4,2,68.78
+RES_0904,Social Sciences,9,Gemini Ultra,Weekly,6.0,1,6,98.75
+RES_0905,Medicine,2,Gemini Ultra,Weekly,10.6,11,8,89.02
+RES_0906,Humanities,4,GPT-4,Never,10.3,3,7,73.95
+RES_0907,Engineering,19,Claude 3,Never,11.0,2,8,63.7
+RES_0908,Humanities,12,GPT-4,Daily,4.8,7,4,80.62
+RES_0909,Engineering,11,GPT-4,Monthly,5.4,5,3,68.52
+RES_0910,Computer Science,18,Copilot,Weekly,2.8,1,7,81.4
+RES_0911,Humanities,4,GPT-4,Daily,10.2,6,2,93.33
+RES_0912,Computer Science,2,Claude 3,Never,1.6,4,5,84.57
+RES_0913,Social Sciences,16,GPT-4,Daily,9.4,9,7,85.29
+RES_0914,Medicine,7,Copilot,Never,13.2,4,1,81.59
+RES_0915,Engineering,4,Llama 3,Rarely,13.5,9,4,97.0
+RES_0916,Medicine,1,GPT-4,Never,7.3,5,2,97.18
+RES_0917,Computer Science,9,Llama 3,Never,7.4,2,6,80.46
+RES_0918,Engineering,7,Gemini Ultra,Never,2.1,8,1,72.2
+RES_0919,Medicine,6,None,Monthly,0.0,2,7,78.34
+RES_0920,Humanities,1,GPT-4,Never,10.4,7,3,67.44
+RES_0921,Physics,22,Copilot,Weekly,12.5,9,1,85.39
+RES_0922,Computer Science,2,None,Weekly,0.0,3,8,79.95
+RES_0923,Medicine,6,None,Daily,0.0,3,7,64.12
+RES_0924,Computer Science,5,Gemini Ultra,Monthly,4.4,6,2,67.89
+RES_0925,Computer Science,12,Gemini Ultra,Daily,6.9,7,7,79.14
+RES_0926,Engineering,1,Claude 3,Weekly,12.7,2,3,95.41
+RES_0927,Engineering,11,Gemini Ultra,Weekly,13.3,9,9,82.6
+RES_0928,Physics,9,Llama 3,Rarely,4.4,5,8,87.19
+RES_0929,Humanities,4,Gemini Ultra,Never,8.7,5,5,73.53
+RES_0930,Computer Science,11,Claude 3,Weekly,3.7,3,7,82.8
+RES_0931,Medicine,8,Gemini Ultra,Daily,2.4,6,3,77.85
+RES_0932,Social Sciences,26,Copilot,Daily,13.8,6,1,86.3
+RES_0933,Computer Science,7,GPT-4,Never,12.5,4,1,62.02
+RES_0934,Computer Science,3,Copilot,Never,11.6,6,2,79.68
+RES_0935,Physics,11,Llama 3,Rarely,1.7,8,8,71.81
+RES_0936,Humanities,6,Copilot,Monthly,12.8,4,1,73.01
+RES_0937,Social Sciences,8,Claude 3,Daily,7.1,6,5,98.34
+RES_0938,Engineering,2,Claude 3,Never,5.8,4,9,67.29
+RES_0939,Engineering,12,None,Daily,0.0,9,9,72.42
+RES_0940,Medicine,5,GPT-4,Never,8.7,5,2,80.34
+RES_0941,Social Sciences,10,Copilot,Weekly,2.3,7,7,94.43
+RES_0942,Engineering,30,Claude 3,Daily,11.6,2,1,76.63
+RES_0943,Medicine,6,Llama 3,Weekly,9.2,4,3,89.68
+RES_0944,Humanities,14,Claude 3,Daily,3.6,4,6,94.17
+RES_0945,Medicine,7,Llama 3,Monthly,3.6,7,9,72.37
+RES_0946,Engineering,4,Claude 3,Rarely,3.6,3,10,75.67
+RES_0947,Physics,20,GPT-4,Weekly,1.8,4,2,74.23
+RES_0948,Physics,1,GPT-4,Never,9.2,3,7,93.23
+RES_0949,Physics,16,GPT-4,Monthly,12.8,3,4,61.77
+RES_0950,Engineering,1,None,Daily,0.0,2,2,72.31
+RES_0951,Physics,15,None,Weekly,0.0,10,3,87.11
+RES_0952,Social Sciences,8,Claude 3,Daily,1.2,3,6,82.56
+RES_0953,Humanities,3,Gemini Ultra,Daily,1.7,2,10,77.41
+RES_0954,Medicine,5,Claude 3,Daily,9.0,6,9,81.54
+RES_0955,Medicine,13,Gemini Ultra,Rarely,12.5,4,8,67.88
+RES_0956,Engineering,28,Copilot,Rarely,5.6,6,10,77.19
+RES_0957,Physics,1,None,Never,0.0,2,9,80.02
+RES_0958,Physics,3,Claude 3,Weekly,5.9,4,4,95.96
+RES_0959,Computer Science,2,Gemini Ultra,Monthly,9.3,9,4,70.41
+RES_0960,Humanities,7,GPT-4,Monthly,4.8,10,9,94.63
+RES_0961,Social Sciences,15,None,Monthly,0.0,5,8,85.71
+RES_0962,Medicine,2,GPT-4,Daily,1.4,2,2,60.81
+RES_0963,Computer Science,8,Gemini Ultra,Rarely,11.3,3,8,88.91
+RES_0964,Computer Science,15,Gemini Ultra,Weekly,9.8,7,1,61.42
+RES_0965,Engineering,5,Gemini Ultra,Daily,9.1,6,9,99.8
+RES_0966,Medicine,9,GPT-4,Rarely,11.4,4,9,94.82
+RES_0967,Engineering,19,None,Rarely,0.0,2,8,71.86
+RES_0968,Social Sciences,3,GPT-4,Weekly,10.5,7,5,70.27
+RES_0969,Computer Science,1,Gemini Ultra,Weekly,3.9,6,5,75.22
+RES_0970,Computer Science,10,GPT-4,Weekly,5.9,7,3,74.21
+RES_0971,Humanities,10,Claude 3,Daily,2.8,7,5,74.86
+RES_0972,Social Sciences,5,Llama 3,Never,2.8,3,4,72.7
+RES_0973,Computer Science,4,Claude 3,Weekly,10.5,3,1,84.78
+RES_0974,Social Sciences,8,GPT-4,Never,13.0,4,9,66.55
+RES_0975,Medicine,3,GPT-4,Daily,14.5,5,10,93.75
+RES_0976,Physics,3,Claude 3,Never,9.8,2,4,92.41
+RES_0977,Computer Science,13,Gemini Ultra,Monthly,3.6,4,3,79.01
+RES_0978,Humanities,2,Copilot,Never,2.5,7,6,94.02
+RES_0979,Medicine,1,GPT-4,Weekly,12.4,5,1,69.86
+RES_0980,Social Sciences,4,Claude 3,Daily,9.1,6,5,60.7
+RES_0981,Engineering,5,GPT-4,Weekly,9.7,4,7,84.71
+RES_0982,Medicine,11,GPT-4,Monthly,11.9,9,2,78.27
+RES_0983,Computer Science,5,Gemini Ultra,Weekly,10.8,2,10,82.63
+RES_0984,Social Sciences,21,Gemini Ultra,Weekly,12.7,6,9,95.88
+RES_0985,Physics,8,GPT-4,Weekly,1.8,4,6,98.7
+RES_0986,Medicine,4,GPT-4,Rarely,11.5,3,2,85.31
+RES_0987,Computer Science,11,GPT-4,Monthly,12.9,6,8,90.49
+RES_0988,Humanities,21,Copilot,Weekly,5.0,7,8,63.34
+RES_0989,Engineering,13,None,Weekly,0.0,8,1,66.41
+RES_0990,Social Sciences,1,GPT-4,Weekly,10.0,9,1,89.25
+RES_0991,Medicine,6,GPT-4,Daily,5.4,5,1,77.21
+RES_0992,Medicine,10,Copilot,Rarely,14.4,4,4,77.79
+RES_0993,Physics,12,None,Daily,0.0,3,4,72.31
+RES_0994,Physics,7,Claude 3,Rarely,1.5,7,8,84.23
+RES_0995,Humanities,6,GPT-4,Weekly,9.1,4,1,67.39
+RES_0996,Engineering,26,GPT-4,Monthly,3.3,8,10,85.01
+RES_0997,Humanities,13,Llama 3,Never,11.0,8,3,66.93
+RES_0998,Computer Science,11,Claude 3,Never,3.5,1,1,62.55
+RES_0999,Computer Science,5,GPT-4,Weekly,4.3,5,9,73.18
+RES_1000,Humanities,3,Llama 3,Daily,7.9,4,10,69.22
