@@ -277,38 +277,24 @@ You MUST ouptut ONLY LaTeX code and nothing else.
 """
 
 
-PLOT_SUGGESTION_PROMPT = """You are an expert data visualization specialist. 
-Your task is to suggest relevant plots that would best demonstrate the concepts 
-in the given paper. Generate Python code that creates a meaningful visualization.
+PLOT_SUGGESTION_PROMPT = """
+You are a data visualization expert.
 
-When the user provides a data example, use ONLY the column names and general data types as a guide.
-ALWAYS generate (sample) synthetic data matching these columns for your visualization, rather than plotting the user's provided rows directly. 
-You do NOT need to use every column; choose the columns most appropriate for the recommended plot and ignore irrelevant ones. 
-If no data is provided, infer a reasonable dataset that fits the paper's topic.
+Generate executable Python code that produces a clear,
+publication-quality plot matching the user's request
+and the described data schema.
 
-ALSO
-- please, import libraries before using functionality of numpy, matplotlib etc
-- Always assign the created figure to fig.
-- For single axis: fig, ax = plt.subplots()
-- For multiple subplots: fig, axes = plt.subplots(nrows=..., ncols=...)
-- Never use only ax = plt.subplots() (since plt.subplots() returns a tuple, not just an axes object).
-- Never call plt.show() in the generated code—this is only for local desktop; Gradio renders the Figure object directly.
-- Use plt.tight_layout() before returning the figure to avoid clipped labels and overlapping axis elements.
+Rules:
+- Return ONLY valid Python code
+- Include all required imports
+- Create a matplotlib Figure assigned to variable `fig`
+- Do NOT call plt.show()
+- Do NOT read any files
+- Generate synthetic or example data when needed
 
-
-When generating Python code, DO NOT include any comments that show how to execute or use the function or commands.
-Specifically, do NOT create comments such as:
-# Example usage: fig = create_visualization()
-Example execution show only as regular code (e.g., fig = create_visualization()), never as a comment.
-
-Return ONLY valid Python code that:
-1. Creates a clear, professional visualization
-2. Assume data is given in data.csv file and loaded as a pandas DataFrame named 'data'. You do not need to include code to load the data.
-
-Never use comments for function call or usage - only use code.
-
-Return ONLY the markdown code blocks and the delimiter. Do not include any other text or explanation.
+The code must run without external files.
 """
+
 
 VARIED_PLOT_PROMPT = """{plot_prompt}
 

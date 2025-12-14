@@ -903,113 +903,192 @@ class KirokuUI:
                 ],
             )
 
+    # def generate_multiple_plots(self, plot_prompt: str):
+    #     """Generate multiple plot variations using fixed NUM_PLOTS"""
+
+    #     try:
+    #         if not self.plotter:
+    #             self.plotter = self._initialize_plotter()
+
+    #         if not self.plotter:
+    #             yield self._create_error_message(
+    #                 "Could not initialize plotter. Please check logs."
+    #             )
+    #             return
+
+    #         # Clear previous gallery
+    #         self.plot_gallery = []
+    #         self.selected_plot_id = None
+
+    #         # Get paper context if available
+    #         paper_context = ""
+    #         relevant_files = []
+
+    #         # Try to get latest context from writer if available
+    #         if self.writer:
+    #             try:
+    #                 state = self.writer.get_state()
+    #                 if state and state.values:
+    #                     if state.values.get("relevant_files"):
+    #                         relevant_files = state.values["relevant_files"]
+
+    #                     else:
+    #                         yield self._create_error_message(
+    #                             "⚠️ No relevant files found in writer state."
+    #                         )
+    #                         return
+    #                     if state.values.get("draft"):
+    #                         paper_context = state.values["draft"]
+    #                     elif state.values.get("content"):
+    #                         content = state.values["content"]
+    #                         paper_context = (
+    #                             "\n\n".join(content)
+    #                             if isinstance(content, list)
+    #                             else str(content)
+    #                         )
+    #                     elif state.values.get("hypothesis"):
+    #                         paper_context = state.values["hypothesis"]
+    #             except Exception as e:
+    #                 logging.warning(f"Could not retrieve writer state: {e}")
+
+    #         if (
+    #             not paper_context
+    #             and self.state_values
+    #             and hasattr(self.state_values, "hypothesis")
+    #         ):
+    #             paper_context = self.state_values.hypothesis
+
+    #         has_prompt = bool(plot_prompt.strip())
+    #         has_draft = bool(paper_context.strip())
+
+    #         if not has_prompt and not has_draft and not relevant_files:
+    #             yield self._create_error_message(
+    #                 "⚠️ No input provided\n\nPlease provide a plot description."
+    #             )
+    #             return
+
+    #         # Generate plots with VARIATION in the prompt
+    #         for relevant_file in relevant_files:
+    #             logging.info(
+    #                 f"Generating plot for relevant file: {relevant_file.file_path}"
+    #             )
+    #             for i in range(NUM_PLOTS):
+    #                 logging.info(f"Generating variation {i + 1}/{NUM_PLOTS}...")
+
+    #                 # ⭐ Show "generating" status immediately
+    #                 status_update = f"🔄 Generating plot {i + 1}/{NUM_PLOTS}..."
+    #                 current_gallery = self.render_gallery()
+    #                 # Update just the status text (last element in the tuple)
+    #                 yield (*current_gallery[:-1], status_update)
+
+    #                 try:
+    #                     # Add variation instruction to prompt
+    #                     varied_prompt = f"{plot_prompt}\n\nThis is variation {i+1} of {NUM_PLOTS}. Make it distinct."
+
+    #                     fig_path, code = self.plotter.suggest_plot(
+    #                         relevant_file=relevant_file,
+    #                         paper_content=paper_context if has_draft else "",
+    #                         user_prompt=varied_prompt,  # ← Use varied prompt
+    #                         num_plots=NUM_PLOTS,
+    #                     )
+
+    #                     plot_version = PlotVersion(
+    #                         id=str(uuid.uuid4()),
+    #                         image_path=fig_path,
+    #                         code=code,  # ← Each should now have different code
+    #                         timestamp=datetime.now(),
+    #                         selected=False,
+    #                     )
+
+    #                     self.plot_gallery.append(plot_version)
+    #                     logging.info(f"✓ Variation {i + 1} generated")
+    #                     yield self.render_gallery()
+
+    #                     # Log code preview to verify it's different
+    #                     logging.debug(
+    #                         f"Variation {i + 1} code preview: {code[:100]}..."
+    #                     )
+
+    #                 except Exception as e:
+    #                     logging.error(f"Failed to generate variation {i + 1}: {e}")
+    #                     continue
+
+    #             success_count = len(self.plot_gallery)
+    #             logging.info(f"✓ Complete: {success_count}/{NUM_PLOTS} successful")
+
+    #             # yield self.render_gallery()
+
+    #     except Exception as e:
+    #         logging.error("Critical error in generate_multiple_plots", exc_info=True)
+    #         yield self._create_error_message(f"Critical Error:\n{str(e)}")
+    #     finally:
+    #         if self.plotter:
+    #             self.plotter.cleanup()
     def generate_multiple_plots(self, plot_prompt: str):
-        """Generate multiple plot variations using fixed NUM_PLOTS"""
+        """Generate one plot per relevant file"""
 
         try:
+            # Initialize plotter
             if not self.plotter:
                 self.plotter = self._initialize_plotter()
-
             if not self.plotter:
-                yield self._create_error_message(
-                    "Could not initialize plotter. Please check logs."
-                )
+                yield self._create_error_message("Could not initialize plotter. Please check logs.")
                 return
 
-            # Clear previous gallery
+            # Clear previous plots
             self.plot_gallery = []
             self.selected_plot_id = None
 
-            # Get paper context if available
-            paper_context = ""
-            relevant_files = []
-
-            # Try to get latest context from writer if available
-            if self.writer:
-                try:
-                    state = self.writer.get_state()
-                    if state and state.values:
-                        if state.values.get("relevant_files"):
-                            relevant_files = state.values["relevant_files"]
-
-                        else:
-                            yield self._create_error_message(
-                                "⚠️ No relevant files found in writer state."
-                            )
-                            return
-                        if state.values.get("draft"):
-                            paper_context = state.values["draft"]
-                        elif state.values.get("content"):
-                            content = state.values["content"]
-                            paper_context = (
-                                "\n\n".join(content)
-                                if isinstance(content, list)
-                                else str(content)
-                            )
-                        elif state.values.get("hypothesis"):
-                            paper_context = state.values["hypothesis"]
-                except Exception as e:
-                    logging.warning(f"Could not retrieve writer state: {e}")
-
-            if (
-                not paper_context
-                and self.state_values
-                and hasattr(self.state_values, "hypothesis")
-            ):
-                paper_context = self.state_values.hypothesis
-
-            has_prompt = bool(plot_prompt.strip())
-            has_draft = bool(paper_context.strip())
-
-            if not has_prompt and not has_draft and not relevant_files:
-                yield self._create_error_message(
-                    "⚠️ No input provided\n\nPlease provide a plot description."
-                )
+            # Validate input
+            if not plot_prompt.strip():
+                yield self._create_error_message("No plot description provided.")
                 return
 
-            # Generate plots with VARIATION in the prompt
-            for relevant_file in relevant_files:
-                logging.info(
-                    f"Generating plot for relevant file: {relevant_file.file_path}"
-                )
-                for i in range(NUM_PLOTS):
-                    logging.info(f"Generating variation {i + 1}/{NUM_PLOTS}...")
+            # Get context from writer state
+            paper_context, relevant_files = self._get_writer_context()
 
-                    try:
-                        # Add variation instruction to prompt
-                        varied_prompt = f"{plot_prompt}\n\nThis is variation {i+1} of {NUM_PLOTS}. Make it distinct."
+            if not relevant_files:
+                yield self._create_error_message("No relevant files found.")
+                return
 
-                        fig_path, code = self.plotter.suggest_plot(
-                            relevant_file=relevant_file,
-                            paper_content=paper_context if has_draft else "",
-                            user_prompt=varied_prompt,  # ← Use varied prompt
-                            num_plots=NUM_PLOTS,
-                        )
+            # Generate one plot per file
+            total_files = len(relevant_files)
 
-                        plot_version = PlotVersion(
-                            id=str(uuid.uuid4()),
-                            image_path=fig_path,
-                            code=code,  # ← Each should now have different code
-                            timestamp=datetime.now(),
-                            selected=False,
-                        )
+            for i, relevant_file in enumerate(relevant_files, 1):
+                # Show progress status
+                status = f"🔄 Generating plot {i}/{total_files} for {relevant_file.file_path.name}..."
+                yield (*self.render_gallery()[:-1], status)
 
-                        self.plot_gallery.append(plot_version)
-                        logging.info(f"✓ Variation {i + 1} generated")
+                try:
+                    # Generate plot
+                    fig_path, code = self.plotter.suggest_plot(
+                        relevant_file=relevant_file,
+                        paper_content=paper_context,
+                        user_prompt=plot_prompt,
+                        # num_plots=1,
+                    )
 
-                        # Log code preview to verify it's different
-                        logging.debug(
-                            f"Variation {i + 1} code preview: {code[:100]}..."
-                        )
+                    # Add to gallery
+                    self.plot_gallery.append(PlotVersion(
+                        id=str(uuid.uuid4()),
+                        image_path=fig_path,
+                        code=code,
+                        timestamp=datetime.now(),
+                        selected=False,
+                    ))
 
-                    except Exception as e:
-                        logging.error(f"Failed to generate variation {i + 1}: {e}")
-                        continue
+                    logging.info(f"✓ Generated plot {i}/{total_files}")
 
-                success_count = len(self.plot_gallery)
-                logging.info(f"✓ Complete: {success_count}/{NUM_PLOTS} successful")
+                    # Update UI with new plot
+                    yield self.render_gallery()
 
-                yield self.render_gallery()
+                except Exception as e:
+                    logging.error(f"Failed to generate plot for {relevant_file.file_path.name}: {e}")
+                    continue
+
+            # Final summary
+            success_count = len(self.plot_gallery)
+            logging.info(f"✓ Complete: {success_count}/{total_files} plots generated")
 
         except Exception as e:
             logging.error("Critical error in generate_multiple_plots", exc_info=True)
@@ -1017,6 +1096,40 @@ class KirokuUI:
         finally:
             if self.plotter:
                 self.plotter.cleanup()
+
+
+    def _get_writer_context(self):
+        """Extract paper context and relevant files from writer state"""
+        paper_context = ""
+        relevant_files = []
+
+        if self.writer:
+            try:
+                state = self.writer.get_state()
+                if not state or not state.values:
+                    logging.warning("Writer state not ready yet")
+                    return paper_context, relevant_files
+
+                if state and state.values:
+                    # Get relevant files
+                    relevant_files = state.values.get("relevant_files", [])
+
+                    if state.values.get("draft"):
+                        paper_context = state.values["draft"]
+                    elif state.values.get("content"):
+                        content = state.values["content"]
+                        paper_context = "\n\n".join(content) if isinstance(content, list) else str(content)
+                    elif state.values.get("hypothesis"):
+                        paper_context = state.values["hypothesis"]
+            except Exception as e:
+                logging.warning(f"Could not retrieve writer state: {e}")
+
+        # Fallback to state_values
+        if not paper_context and self.state_values and hasattr(self.state_values, "hypothesis"):
+            paper_context = self.state_values.hypothesis
+
+        return paper_context, relevant_files
+
 
     def render_gallery(self):
         """Render the plot gallery with radio choices"""
@@ -1055,7 +1168,7 @@ class KirokuUI:
     def show_single_plot_code(self, plot_choice: str):
         """Show code for selected plot from radio button"""
         if not plot_choice or not self.plot_gallery:
-            return "# No plot selected"
+            return "# No plot selected", gr.update()  # Don't change status
 
         try:
             # Parse "Plot 1", "Plot 2", etc.
@@ -1064,9 +1177,8 @@ class KirokuUI:
             if 0 <= plot_idx < len(self.plot_gallery):
                 self.selected_plot_id = self.plot_gallery[plot_idx].id
                 code = self.plot_gallery[plot_idx].code
-                status = (
-                    f"✓ {len(self.plot_gallery)} plots | Viewing: Plot {plot_idx + 1}"
-                )
+                # Only update status, don't overwrite it completely
+                status = f"Viewing: Plot {plot_idx + 1}"
                 return code, status
         except Exception as e:
             logging.error(f"Error showing plot code: {e}")

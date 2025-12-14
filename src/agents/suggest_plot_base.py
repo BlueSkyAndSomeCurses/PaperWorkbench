@@ -130,7 +130,8 @@ Statistical Summary (numeric columns only):
 
         draft_code = code.strip()
 
-        return f"{MATPLOTLIB_SETUP}\n{DATA_BOOTSTRAP}\n{draft_code}\n{CAPTURE_CODE}"
+        # return f"{MATPLOTLIB_SETUP}\n{DATA_BOOTSTRAP}\n{draft_code}\n{CAPTURE_CODE}"
+        return f"{MATPLOTLIB_SETUP}\n{draft_code}\n{CAPTURE_CODE}"
 
     def _generate_plot_prompt(
         self,
@@ -138,87 +139,47 @@ Statistical Summary (numeric columns only):
         paper_content: str,
         user_prompt: str,
         error_history: str = "",
-        plot_index: int = 1,
-        total_plots: int = 1,
     ):
-        system_prompt = PLOT_SUGGESTION_PROMPT
-
-        # Task intent
-        if paper_content.strip():
-            task_context = """
-Generate publication-quality plots that support the paper.
-Use the user's plot description as guidance.
-"""
-        else:
-            task_context = """
-Generate exploratory, publication-quality plots based on the user's description.
-You must generate any required data yourself.
-"""
-
-        intent_context = f"""
-**User Plot Description:**
+        # --- Core task ---
+        user_message = f"""
+User request:
 {user_prompt}
-"""
 
-        plot_context = ""
-        if total_plots > 1:
-            plot_context = f"""
-This is plot {plot_index} of {total_plots}.
-Make it DISTINCT from the others."""
+Data context:
+The data comes from a file with the following structure:
+{create_document_prompt(relevant_file)}
+    """
 
-        # Error correction context
-        error_context = ""
+        # --- Optional paper context (SHORT) ---
+        if paper_content.strip():
+            user_message += f"""
+
+Paper context (high-level, optional):
+{paper_content[:800]}
+    """
+
+        # --- Retry correction ONLY when needed ---
         if error_history:
-            error_context = f"""
-⚠️ **PREVIOUS ATTEMPT FAILED - CORRECTION REQUIRED** ⚠️
+            user_message += f"""
+
+The previous code failed with this error:
 
 {error_history}
 
-**CRITICAL:** Return ONLY the corrected Python code.
-Do NOT include:
-- Explanations or descriptions
-- Markdown code fences (```)
-- Comments about what you changed
-- Just the raw Python code that will execute successfully.
+Return corrected Python code that fixes the error.
 """
 
-        user_message = f"""
-{task_context}
-
-{intent_context}
-
-**Paper Context:**
-{paper_content[:2000] if paper_content.strip() else "(No paper context provided)"}
-
-{plot_context}
-Below is the file description, in what section it should be applied and how it is organized:
-{create_document_prompt(relevant_file)}
-
-{error_context}
-
-**Output Requirements:**
-- Return ONLY executable Python code
-- NO markdown fences (no ```)
-- NO explanations or text before/after
-- Include all necessary imports
-
-Start with imports and end with the last line of code. Nothing else.
-"""
-
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_message),
+        return [
+            SystemMessage(content=PLOT_SUGGESTION_PROMPT),
+            HumanMessage(content=user_message.strip()),
         ]
 
-        return messages
 
     def suggest_plot(
         self,
         relevant_file: RelevantFile,
         paper_content: str = "",
-        user_prompt: str = "",
-        num_plots: int = 5,
-        data_df: Optional[pd.DataFrame] = None,
+        user_prompt: str = ""
     ) -> Tuple[Optional[Path], str]:
         """
         Generate a publication-quality plot based on paper content and/or user prompt.
@@ -235,7 +196,6 @@ Start with imports and end with the last line of code. Nothing else.
 
         current_attempt = 1
         error_history = ""
-        last_code = ""
 
         while current_attempt <= MAX_PLOT_ATTEMPTS:
             try:
@@ -245,8 +205,8 @@ Start with imports and end with the last line of code. Nothing else.
                     paper_content=paper_content,
                     user_prompt=user_prompt,
                     error_history=error_history,
-                    plot_index=1,
-                    total_plots=num_plots,
+                    # plot_index=1,
+                    # total_plots=num_plots,
                 )
 
                 response = self.model.invoke(messages)
@@ -260,22 +220,26 @@ Start with imports and end with the last line of code. Nothing else.
                 )
                 logging.info(f"Code preview:\n{code[:500]}")
 
-                # Prepare files payload: use cached DataFrame if provided, else read from disk
-                if data_df is not None:
-                    try:
-                        file_data = data_df.to_csv(index=False)
-                        payload_name = "data.csv"
-                    except Exception as e:
-                        logging.warning(f"Failed to convert DataFrame to CSV, falling back to disk read: {e}")
-                        with relevant_file.file_path.open("r", encoding="utf-8") as f:
-                            file_data = f.read()
-                        payload_name = "data.csv"
-                else:
-                    with relevant_file.file_path.open("r", encoding="utf-8") as f:
-                        file_data = f.read()
-                    payload_name = "data.csv"
+                result = self.codeapi.run_python(code, {})
 
-                result = self.codeapi.run_python(code, {payload_name: file_data})
+                # Prepare files payload: use cached DataFrame if provided, else read from disk
+                # TODO: think if we need tha part:
+                # if data_df is not None:
+                #     try:
+                #         file_data = data_df.to_csv(index=False)
+                #         payload_name = "data.csv"
+                #     except Exception as e:
+                #         logging.warning(f"Failed to convert DataFrame to CSV, falling back to disk read: {e}")
+                #         with relevant_file.file_path.open("r", encoding="utf-8") as f:
+                #             file_data = f.read()
+                #         payload_name = "data.csv"
+                # else:
+                #     with relevant_file.file_path.open("r", encoding="utf-8") as f:
+                #         file_data = f.read()
+                #     payload_name = "data.csv"
+
+                # result = self.codeapi.run_python(code, {payload_name: file_data})
+
 
                 images_b64 = CodeAPI.extract_images_base64(result)
 
@@ -321,27 +285,12 @@ Start with imports and end with the last line of code. Nothing else.
                         f"Plot generation attempt {current_attempt}/{MAX_PLOT_ATTEMPTS} failed: {str(e)}"
                     )
 
-                    # Build error history WITHOUT markdown fences
-                    # This prevents the LLM from echoing them back
                     error_history = f"""
-ATTEMPT {current_attempt} FAILED
+Python error:
+{str(e)}
 
-The following Python code caused an error:
-
-{last_code}
-
-Error Message: {str(e)}
-
-Error Traceback:
-{full_traceback}
-
-Common issues to check:
-1. Is 'fig' variable explicitly created?
-2. Are all imports included?
-3. Are there any undefined variables?
-4. Is the data generation logic correct?
-
-Generate CORRECTED code that fixes these issues.
+Traceback:
+{traceback.format_exc()}
 """
 
                     current_attempt += 1
@@ -354,55 +303,55 @@ Generate CORRECTED code that fixes these issues.
 
         return self._create_fallback_plot(error_message="Max attempts reached")
 
-    def _execute_plot_code(
-        self, code: str, data: Optional[pd.DataFrame] = None
-    ) -> plt.Figure:
-        """
-        Execute LLM-generated plotting code in a controlled environment.
+    # def _execute_plot_code(
+    #     self, code: str, data: Optional[pd.DataFrame] = None
+    # ) -> plt.Figure:
+    #     """
+    #     Execute LLM-generated plotting code in a controlled environment.
 
-        Args:
-            code: Python code string (already cleaned of markdown)
-            data: Optional DataFrame (not used in current version)
+    #     Args:
+    #         code: Python code string (already cleaned of markdown)
+    #         data: Optional DataFrame (not used in current version)
 
-        Returns:
-            Generated matplotlib Figure
-        """
-        namespace = {
-            "matplotlib": matplotlib,
-            "plt": plt,
-            "pd": pd,
-            "sns": sns,
-            "np": np,
-            "scipy": scipy,
-            "data": data,
-            "PLOT_DELIMITER": PLOT_DELIMITER,
-        }
+    #     Returns:
+    #         Generated matplotlib Figure
+    #     """
+    #     namespace = {
+    #         "matplotlib": matplotlib,
+    #         "plt": plt,
+    #         "pd": pd,
+    #         "sns": sns,
+    #         "np": np,
+    #         "scipy": scipy,
+    #         "data": data,
+    #         "PLOT_DELIMITER": PLOT_DELIMITER,
+    #     }
 
-        try:
-            if "```" in code:
-                logging.warning("Found ``` in code during execution, cleaning again...")
-                code = self._clean_code(code)
+    #     try:
+    #         if "```" in code:
+    #             logging.warning("Found ``` in code during execution, cleaning again...")
+    #             code = self._clean_code(code)
 
-            self.codeapi.run_python(code)
+    #         self.codeapi.run_python(code)
 
-            exec(code, namespace)
+    #         exec(code, namespace)
 
-            # Try to retrieve figure
-            if "fig" in namespace and isinstance(namespace["fig"], plt.Figure):
-                return namespace["fig"]
-            elif plt.gcf() and len(plt.gcf().axes) > 0:
-                return plt.gcf()
-            else:
-                raise ValueError(
-                    "Code executed but did not create a valid Figure. "
-                    "Ensure code creates a figure and assigns it to variable 'fig'."
-                )
+    #         # Try to retrieve figure
+    #         if "fig" in namespace and isinstance(namespace["fig"], plt.Figure):
+    #             return namespace["fig"]
+    #         elif plt.gcf() and len(plt.gcf().axes) > 0:
+    #             return plt.gcf()
+    #         else:
+    #             raise ValueError(
+    #                 "Code executed but did not create a valid Figure. "
+    #                 "Ensure code creates a figure and assigns it to variable 'fig'."
+    #             )
 
-        except Exception as e:
-            logging.error(f"Error executing plot code: {e}")
-            # Log the problematic code for debugging
-            logging.debug(f"Failed code (first 1000 chars):\n{code[:1000]}")
-            raise
+    #     except Exception as e:
+    #         logging.error(f"Error executing plot code: {e}")
+    #         # Log the problematic code for debugging
+    #         logging.debug(f"Failed code (first 1000 chars):\n{code[:1000]}")
+    #         raise
 
     def generate_plot_name(self, code: str) -> str:
         result = self.model.invoke(

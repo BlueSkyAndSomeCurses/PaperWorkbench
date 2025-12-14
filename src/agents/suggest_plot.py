@@ -12,16 +12,16 @@ from src.agents.states import AgentState, State
 from src.agents.suggest_plot_base import PlotSuggester
 
 
-@dataclass
-class PlotSuggestion:
-    """Structured plot suggestion with metadata"""
-    id: str
-    description: str
-    code: str
-    rationale: str
-    approved: bool = False
-    filename_base: Optional[Path] = None
-    figure: Optional[plt.Figure] = None
+# @dataclass
+# class PlotSuggestion:
+#     """Structured plot suggestion with metadata"""
+#     id: str
+#     description: str
+#     code: str
+#     rationale: str
+#     approved: bool = False
+#     filename_base: Optional[Path] = None
+#     figure: Optional[plt.Figure] = None
 
 
 SUPPORTED_TABLE_FORMATS = ['.csv', '.xlsx', '.xls', '.tsv', '.parquet']
@@ -39,7 +39,6 @@ def extract_table_data(file_path: Path, max_rows: int = 5) -> tuple[str, str, st
         Tuple of (data_preview, columns_desc, shape_str)
     """
     try:
-        # Load file based on extension
         if file_path.suffix == '.csv':
             df = pd.read_csv(file_path)
         elif file_path.suffix in ['.xlsx', '.xls']:
@@ -62,172 +61,3 @@ def extract_table_data(file_path: Path, max_rows: int = 5) -> tuple[str, str, st
         logging.error(f"Failed to extract data from {file_path}: {e}")
         return "Failed to load data", "Unknown", "Unknown"
 
-
-class PlotSuggestionAgent(State):
-    """
-    Generate plot suggestions from data files using PlotSuggester.
-    Integrates file-based workflow with the unified PlotSuggester class.
-    """
-    
-    def __init__(self, model: ChatOpenAI):
-        super().__init__(model, "plot_suggestion")
-        # Initialize the unified PlotSuggester with working directory
-        self.plotter = PlotSuggester(model, working_dir=Path.cwd())
-        # Simple in-memory cache for loaded dataframes
-        self.data_cache: dict[Path, pd.DataFrame] = {}
-
-    def run(self, state: AgentState) -> dict:
-        """
-        Generate plot suggestions based on paper plan, content, and data files.
-        """
-        logging.info(f"state {self.name}: running")
-        
-        plan = state.plan
-        task = state.task
-        content = "\n\n".join(state.content or [])
-        
-        suggested_plots: List[PlotSuggestion] = []
-        
-        # Process each relevant data file
-        for i, relevant_file in enumerate(state.relevant_files):
-            if relevant_file.file_path.suffix not in SUPPORTED_TABLE_FORMATS:
-                continue
-            
-            file_path = relevant_file.file_path
-            logging.info(f"Processing data file: {file_path}")
-            
-            try:
-                data_preview, columns_desc, shape = extract_table_data(file_path)
-                
-                # Build context for this file
-                section_applications = "\n".join([
-                    f"- Section '{app.stage_name}': {app.application_desc}"
-                    for app in relevant_file.application
-                ])
-                
-                # Create descriptive prompt for PlotSuggester
-                plot_description = self._build_plot_description(
-                    file_info={
-                        'filename': file_path.name,
-                        'columns': columns_desc,
-                        'shape': shape,
-                        'preview': data_preview,
-                        'description': relevant_file.description,
-                        'applications': section_applications
-                    },
-                    paper_context={
-                        'plan': plan,
-                        'content_preview': content[:2000],
-                        'task': task
-                    }
-                )
-                
-                # Load the actual data for plot generation with caching
-                if file_path not in self.data_cache:
-                    self.data_cache[file_path] = self._load_dataframe(file_path)
-                data_df = self.data_cache[file_path]
-                
-                num_variations = 3
-                
-                for variation_idx in range(num_variations):
-                    try:
-                        # Generate a single plot per call; pass cached DataFrame to avoid disk I/O
-                        img_path, code = self.plotter.suggest_plot(
-                            relevant_file=relevant_file,
-                            paper_content=content,
-                            user_prompt=plot_description,
-                            num_plots=num_variations,
-                            data_df=data_df,
-                        )
-                        
-                        # Create PlotSuggestion object
-                        plot_suggestion = PlotSuggestion(
-                            id=str(uuid.uuid4()),
-                            description=f"Visualization {variation_idx + 1} for {file_path.name}",
-                            code=code,
-                            rationale=f"Generated from {file_path.name} - {relevant_file.description}",
-                            approved=False,
-                            filename_base=file_path,
-                            figure=None,
-                        )
-                        
-                        suggested_plots.append(plot_suggestion)
-                        logging.info(f"✓ Generated plot variation {variation_idx + 1} for {file_path.name}")
-                        
-                    except Exception as e:
-                        logging.error(f"Failed to generate plot variation {variation_idx + 1}: {e}")
-                        continue
-                
-            except Exception as e:
-                logging.error(f"Failed to process file {file_path}: {e}")
-                continue
-        
-        # Cleanup matplotlib resources
-        self.plotter.cleanup()
-        
-        return {
-            "state": self.name,
-            "suggested_plots": suggested_plots
-        }
-    
-    def _build_plot_description(self, file_info: dict, paper_context: dict) -> str:
-        """
-        Build a descriptive prompt for PlotSuggester based on file and paper context.
-        """
-        description = f"""Create a publication-quality visualization for the paper.
-
-**Data Source:** {file_info['filename']}
-- Columns: {file_info['columns']}
-- Size: {file_info['shape']}
-- Purpose: {file_info['description']}
-
-**Paper Context:**
-{paper_context['content_preview']}
-
-**Section Applications:**
-{file_info['applications']}
-
-**Data Preview:**
-{file_info['preview'][:500]}
-
-Generate an informative, publication-ready plot that:
-1. Supports the paper's narrative
-2. Highlights key patterns in the data
-3. Uses appropriate visualization type
-4. Includes clear labels and legend
-"""
-        return description
-    
-    def _load_dataframe(self, file_path: Path) -> pd.DataFrame:
-        """Load data file into DataFrame."""
-        if file_path.suffix == '.csv':
-            return pd.read_csv(file_path)
-        elif file_path.suffix in ['.xlsx', '.xls']:
-            return pd.read_excel(file_path)
-        elif file_path.suffix == '.tsv':
-            return pd.read_csv(file_path, sep='\t')
-        elif file_path.suffix == '.parquet':
-            return pd.read_parquet(file_path)
-        else:
-            raise ValueError(f"Unsupported format: {file_path.suffix}")
-    
-    # def _format_plot_summary(self, plots: List[PlotSuggestion]) -> str:
-    #     """Format plot suggestions for display."""
-    #     if not plots:
-    #         return "No plots generated."
-        
-    #     summary = f"## Plot Suggestions ({len(plots)} generated)\n\n"
-        
-    #     for i, plot in enumerate(plots, 1):
-    #         status = "⏳ Pending Approval" if not plot.approved else "✅ Approved"
-            
-    #         summary += f"### Plot {i}: {plot.description} [{status}]\n\n"
-    #         summary += f"**Source:** {plot.filename_base.name if plot.filename_base else 'N/A'}\n\n"
-    #         summary += f"**Rationale:** {plot.rationale}\n\n"
-    #         summary += f"**Code Preview:**\n```python\n{plot.code[:300]}...\n```\n\n"
-    #         summary += "---\n\n"
-        
-    #     summary += "\n**Next Step:** Review plots and approve/reject them before generation.\n"
-    #     summary += "Type 'approve 1,2,3' or 'reject 2' in the input field.\n"
-        
-    #     return summary
