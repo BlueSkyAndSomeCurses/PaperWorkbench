@@ -40,8 +40,8 @@ from decouple import config
 from src.utils.constants import SUPPORTED_TABLE_FORMATS
 from src.agents.prompts import VARIED_PLOT_PROMPT
 
-PREINITIALIZED_COMPONENTS = 100
-NUM_PLOTS = 10
+PREINITIALIZED_COMPONENTS = 30
+NUM_PLOTS = 3
 
 
 @dataclass
@@ -259,7 +259,7 @@ class DocumentWriter:
         :return: next state to go.
         """
         if config["configurable"]["instruction"]:
-            return "writer_manual_review_graph_state"
+            return "writer_manual_reviewer_graph_state"
         if state.revision_number <= state.max_revisions:
             return "reflection_reviewer_graph_state"
         return "write_abstract_graph_state"
@@ -360,6 +360,13 @@ class KirokuUI:
 
         self.plotter = None
 
+        # Log rendering caches
+        self._last_rendered_log_len: int = 0
+        self._cached_steps_order: list[str] = []
+        self._cached_markdown_by_step: dict[str, str] = {}
+        self._last_accordion_updates: list = [gr.update(visible=False)] * PREINITIALIZED_COMPONENTS
+        self._last_markdown_updates: list = [gr.update(value="")] * PREINITIALIZED_COMPONENTS
+
     def _initialize_plotter(self):
         """Initialize PlotSuggester"""
         try:
@@ -410,39 +417,47 @@ class KirokuUI:
 
     def _get_log_updates(self):
         if not self.writer:
-            return [gr.update(visible=False)] * PREINITIALIZED_COMPONENTS, [
-                gr.update()
-            ] * PREINITIALIZED_COMPONENTS
+            # cache empty updates
+            self._last_accordion_updates = [gr.update(visible=False)] * PREINITIALIZED_COMPONENTS
+            self._last_markdown_updates = [gr.update(value="")] * PREINITIALIZED_COMPONENTS
+            return self._last_accordion_updates, self._last_markdown_updates
 
         state = self.writer.get_state()
         logs = state.values.get("workflow_logs", [])
+
+        # If no new logs since last render, reuse cached UI
+        if len(logs) == self._last_rendered_log_len:
+            return self._last_accordion_updates, self._last_markdown_updates
+
+        # Process only new logs and append to cache structures
+        new_logs = logs[self._last_rendered_log_len :]
+        for log in new_logs:
+            step = log.step
+            if step not in self._cached_markdown_by_step:
+                self._cached_markdown_by_step[step] = ""
+                self._cached_steps_order.append(step)
+            # Append formatted entry incrementally
+            self._cached_markdown_by_step[step] += f"### {log.side}\n{log.message}\n\n---\n\n"
+
+        # Update cursor
+        self._last_rendered_log_len = len(logs)
+
+        # Build UI updates for up to PREINITIALIZED_COMPONENTS steps
         accordion_updates = []
         markdown_updates = []
-
-        # Group logs by step
-        grouped_logs = {}
-        steps_order = []
-        for log in logs:
-            if log.step not in grouped_logs:
-                steps_order.append(log.step)
-                grouped_logs[log.step] = []
-            grouped_logs[log.step].append(log)
-
         for i in range(PREINITIALIZED_COMPONENTS):
-            if i < len(steps_order):
-                step_name = steps_order[i]
-                step_logs = grouped_logs[step_name]
-
-                content = ""
-                for log in step_logs:
-                    content += f"### {log.side}\n{log.message}\n\n---\n\n"
-
+            if i < len(self._cached_steps_order):
+                step_name = self._cached_steps_order[i]
+                content = self._cached_markdown_by_step.get(step_name, "")
                 accordion_updates.append(gr.update(visible=True, label=step_name))
                 markdown_updates.append(gr.update(value=content))
             else:
                 accordion_updates.append(gr.update(visible=False))
                 markdown_updates.append(gr.update(value=""))
 
+        # Cache latest UI updates for reuse during streaming
+        self._last_accordion_updates = accordion_updates
+        self._last_markdown_updates = markdown_updates
         return accordion_updates, markdown_updates
 
     def update(self, instruction):
@@ -452,9 +467,9 @@ class KirokuUI:
         :return: new draft, atlas message and making input object non-interactive.
         """
         draft = ""
+        # STREAM PHASE: only update draft and state, reuse cached log UI
         for d in self.step(instruction):
             draft = d
-            log_accordions, log_markdowns = self._get_log_updates()
 
             current_state_val = "Processing..."
             if self.writer and self.writer.state:
@@ -465,10 +480,11 @@ class KirokuUI:
                 current_state_val,
                 "Processing...",
                 gr.update(interactive=False),
-                *log_accordions,
-                *log_markdowns,
+                *self._last_accordion_updates,
+                *self._last_markdown_updates,
             )
 
+        # FINAL PHASE: compute logs/references and emit full UI (3.2)
         state = self.writer.get_state()
         current_state = state.values["state"]
         try:
@@ -496,6 +512,7 @@ class KirokuUI:
 
         self.next_state = next_state
 
+        # Refresh log UI once at the end of stream
         log_accordions, log_markdowns = self._get_log_updates()
 
         yield (
@@ -540,9 +557,9 @@ class KirokuUI:
             state_values.state = "topic_sentence_writer_graph_state"
 
         draft = ""
+        # STREAM PHASE: only draft/state, reuse cached logs
         for d in self.step("", state_values):
             draft = d
-            log_accordions, log_markdowns = self._get_log_updates()
 
             current_state_val = "Processing..."
             if self.writer and self.writer.state:
@@ -553,8 +570,8 @@ class KirokuUI:
                 current_state_val,
                 "Processing...",
                 gr.update(value="", interactive=False),
-                *log_accordions,
-                *log_markdowns,
+                *self._last_accordion_updates,
+                *self._last_markdown_updates,
             )
 
         state = self.writer.get_state()
@@ -564,6 +581,7 @@ class KirokuUI:
         except:
             next_state = "NONE"
 
+        # Refresh log UI once at the end of initial stream
         log_accordions, log_markdowns = self._get_log_updates()
 
         yield (
@@ -594,6 +612,13 @@ class KirokuUI:
 
         self.working_dir = self.state_values.working_dir
 
+        # Reset log caches on new document
+        self._last_rendered_log_len = 0
+        self._cached_steps_order.clear()
+        self._cached_markdown_by_step.clear()
+        self._last_accordion_updates = [gr.update(visible=False)] * PREINITIALIZED_COMPONENTS
+        self._last_markdown_updates = [gr.update(value="")] * PREINITIALIZED_COMPONENTS
+
         relevant_files_preview = self._update_files_preview()
 
         if self.state_values:
@@ -609,6 +634,7 @@ class KirokuUI:
                 model_name=model_name,
                 temperature=temperature,
             )
+
         return (
             *relevant_files_preview,
             self.state_values.model_dump_json(),
@@ -704,7 +730,7 @@ class KirokuUI:
         ref_list = [
             gr.update(value=True, visible=True, label=reference)
             for i, reference in enumerate(self.references)
-        ] + [gr.update()] * (1000 - len(self.references))
+        ] + [gr.update()] * (200 - len(self.references))
         return [
             gr.update(
                 visible=self.state_values.generate_citations
@@ -733,7 +759,7 @@ class KirokuUI:
 
     def create_ui(self) -> None:
         with gr.Blocks(
-            theme=gr.themes.Default(), fill_height=True
+            theme=gr.themes.Default(), fill_height=True, css=".center-col{display:flex; justify-content:center;}"
         ) as self.kiroku_agent:
             with gr.Tab("Initial Instructions"):
                 with gr.Row():
@@ -751,7 +777,7 @@ class KirokuUI:
                     gr.Checkbox(
                         value=False, visible=False, label=False, interactive=True
                     )
-                    for _ in range(1000)
+                    for _ in range(200)
                 ]
                 submit_ref_list = gr.Button("Submit", visible=False)
 
@@ -771,15 +797,7 @@ class KirokuUI:
                             lines=3,
                         )
 
-                    with gr.Column(scale=1):
-                        num_plots_slider = gr.Slider(
-                            minimum=1,
-                            maximum=5,
-                            value=1,
-                            step=1,
-                            label="Number of variations",
-                        )
-
+                    with gr.Column(scale=1, elem_classes=["center-col"]):
                         generate_btn = gr.Button(
                             "✨ Generate", variant="primary", size="lg"
                         )
@@ -820,8 +838,8 @@ class KirokuUI:
                 )
 
             generate_btn.click(
-                fn=self.generate_multiple_plots,
-                inputs=[plot_prompt, num_plots_slider],
+                self.generate_multiple_plots,
+                inputs=[plot_prompt],
                 outputs=[*plot_images, plot_selector, selected_code, status_text],
                 concurrency_limit=10,
                 concurrency_id="plot_generation",
@@ -885,8 +903,8 @@ class KirokuUI:
                 ],
             )
 
-    def generate_multiple_plots(self, plot_prompt: str, num_plots: int):
-        """Generate multiple plot variations"""
+    def generate_multiple_plots(self, plot_prompt: str):
+        """Generate multiple plot variations using fixed NUM_PLOTS"""
 
         try:
             if not self.plotter:
@@ -954,24 +972,18 @@ class KirokuUI:
                 logging.info(
                     f"Generating plot for relevant file: {relevant_file.file_path}"
                 )
-                for i in range(num_plots):
-                    logging.info(f"Generating variation {i + 1}/{num_plots}...")
+                for i in range(NUM_PLOTS):
+                    logging.info(f"Generating variation {i + 1}/{NUM_PLOTS}...")
 
                     try:
                         # Add variation instruction to prompt
-                        varied_prompt = plot_prompt
-                        if num_plots > 1:
-                            varied_prompt = VARIED_PLOT_PROMPT.format(
-                                plot_prompt=plot_prompt,
-                                iteration=i,
-                                num_plots=num_plots,
-                            )
+                        varied_prompt = f"{plot_prompt}\n\nThis is variation {i+1} of {NUM_PLOTS}. Make it distinct."
 
                         fig_path, code = self.plotter.suggest_plot(
                             relevant_file=relevant_file,
                             paper_content=paper_context if has_draft else "",
                             user_prompt=varied_prompt,  # ← Use varied prompt
-                            num_plots=num_plots,
+                            num_plots=NUM_PLOTS,
                         )
 
                         plot_version = PlotVersion(
@@ -995,7 +1007,7 @@ class KirokuUI:
                         continue
 
                 success_count = len(self.plot_gallery)
-                logging.info(f"✓ Complete: {success_count}/{num_plots} successful")
+                logging.info(f"✓ Complete: {success_count}/{NUM_PLOTS} successful")
 
                 yield self.render_gallery()
 
@@ -1069,8 +1081,20 @@ class KirokuUI:
 
         # Convert figure to image array for gr.Image
         fig.canvas.draw()
-        image_array = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        image_array = image_array.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        try:
+            # Use buffer_rgba to avoid backend-specific tostring_rgb issues
+            buf = np.asarray(fig.canvas.buffer_rgba())
+            # Drop alpha channel for gr.Image if needed
+            image_array = buf[:, :, :3]
+        except Exception:
+            # Fallback: render to PNG bytes and let gr.Image accept filepaths/arrays elsewhere
+            from io import BytesIO
+            png_buf = BytesIO()
+            fig.savefig(png_buf, format="png")
+            png_buf.seek(0)
+            import PIL.Image as PILImage
+            pil_img = PILImage.open(png_buf).convert("RGB")
+            image_array = np.array(pil_img)
         plt.close(fig)
 
         error_updates = []

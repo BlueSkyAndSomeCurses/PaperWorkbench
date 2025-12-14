@@ -218,6 +218,7 @@ Start with imports and end with the last line of code. Nothing else.
         paper_content: str = "",
         user_prompt: str = "",
         num_plots: int = 5,
+        data_df: Optional[pd.DataFrame] = None,
     ) -> Tuple[Optional[Path], str]:
         """
         Generate a publication-quality plot based on paper content and/or user prompt.
@@ -226,9 +227,10 @@ Start with imports and end with the last line of code. Nothing else.
             paper_content: Optional textual draft to provide context.
             user_prompt: User-provided description of desired plot.
             num_plots: Number of variations (used for prompt context).
+            data_df: Optional preloaded DataFrame to avoid disk I/O.
 
         Returns:
-            Tuple of (matplotlib Figure, Python code string)
+            Tuple of (image path, Python code string)
         """
 
         current_attempt = 1
@@ -258,16 +260,27 @@ Start with imports and end with the last line of code. Nothing else.
                 )
                 logging.info(f"Code preview:\n{code[:500]}")
 
-                with relevant_file.file_path.open("r", encoding="utf-8") as f:
-                    file_data = f.read()
+                # Prepare files payload: use cached DataFrame if provided, else read from disk
+                if data_df is not None:
+                    try:
+                        file_data = data_df.to_csv(index=False)
+                        payload_name = "data.csv"
+                    except Exception as e:
+                        logging.warning(f"Failed to convert DataFrame to CSV, falling back to disk read: {e}")
+                        with relevant_file.file_path.open("r", encoding="utf-8") as f:
+                            file_data = f.read()
+                        payload_name = "data.csv"
+                else:
+                    with relevant_file.file_path.open("r", encoding="utf-8") as f:
+                        file_data = f.read()
+                    payload_name = "data.csv"
 
-                result = self.codeapi.run_python(code, {"data.csv": file_data})
+                result = self.codeapi.run_python(code, {payload_name: file_data})
 
                 images_b64 = CodeAPI.extract_images_base64(result)
 
+                img_path: Optional[Path] = None
                 if images_b64:
-                    import time
-
                     filename_base = self.generate_plot_name(code)
 
                     images_dir = self.working_dir / "images"
@@ -291,7 +304,9 @@ Start with imports and end with the last line of code. Nothing else.
 
                         logging.info(f"Saved plot image: {img_path}")
                 else:
-                    logging.warning(f"No images generated for plot {i + 1}")
+                    logging.warning("No images generated for plot")
+                    # Trigger retry/fallback path
+                    raise ValueError("No images generated from code execution")
 
                 logging.info(
                     f"✓ Plot generated successfully on attempt {current_attempt}"

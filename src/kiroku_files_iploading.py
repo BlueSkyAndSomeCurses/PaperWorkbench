@@ -126,8 +126,8 @@ class SimplifiedKirokuUI:
             self.state_values.model_dump_json(),
         )
 
-    def generate_multiple_plots(self, plot_prompt: str, num_plots: int):
-        """Generate multiple plot variations"""
+    def generate_multiple_plots(self, plot_prompt: str):
+        """Generate multiple plot variations using fixed NUM_PLOTS"""
         try:
             # Clear previous gallery
             self.plot_gallery = []
@@ -147,28 +147,21 @@ class SimplifiedKirokuUI:
                 )
 
             # Generate plots with VARIATION in the prompt
-            for i in range(num_plots):
-                logging.info(f"Generating variation {i+1}/{num_plots}...")
+            success_count = 0
+            for i in range(NUM_PLOTS):
+                logging.info(f"Generating variation {i+1}/{NUM_PLOTS}...")
 
                 try:
                     # Add variation instruction to prompt
-                    varied_prompt = plot_prompt
-                    if num_plots > 1:
-                        varied_prompt = f"""{plot_prompt}
-
-    **IMPORTANT: This is variation {i+1} of {num_plots}.**
-    Make this plot DIFFERENT from other variations by:
-    - Using different chart types (line, bar, scatter, heatmap, etc.)
-    - Showing different aspects of the data
-    - Using different color schemes
-    - Highlighting different patterns
-
-    Be creative and distinct!"""
+                    if NUM_PLOTS > 1:
+                        varied_prompt = f"{plot_prompt}\n\n**IMPORTANT: This is variation {i+1} of {NUM_PLOTS}.**\nMake this plot DIFFERENT from other variations."
+                    else:
+                        varied_prompt = plot_prompt
 
                     fig, code = self.plotter.suggest_plot(
                         paper_content=paper_context if has_draft else "",
                         user_prompt=varied_prompt,  # ← Use varied prompt
-                        num_plots=num_plots
+                        num_plots=NUM_PLOTS
                     )
 
                     plot_version = PlotVersion(
@@ -181,6 +174,7 @@ class SimplifiedKirokuUI:
 
                     self.plot_gallery.append(plot_version)
                     logging.info(f"✓ Variation {i+1} generated")
+                    success_count += 1
 
                     # Log code preview to verify it's different
                     logging.debug(f"Variation {i+1} code preview: {code[:100]}...")
@@ -189,8 +183,7 @@ class SimplifiedKirokuUI:
                     logging.error(f"Failed to generate variation {i+1}: {e}")
                     continue
 
-            success_count = len(self.plot_gallery)
-            logging.info(f"✓ Complete: {success_count}/{num_plots} successful")
+            logging.info(f"✓ Complete: {success_count}/{NUM_PLOTS} successful")
 
             return self.render_gallery()
 
@@ -386,15 +379,7 @@ class SimplifiedKirokuUI:
                         )
                     
                     with gr.Column(scale=1):
-                        num_plots_slider = gr.Slider(
-                            minimum=1,
-                            maximum=5,
-                            value=1,
-                            step=1,
-                            label="Number of variations"
-                        )
-                        
-                        generate_btn = gr.Button(
+                        generate_button = gr.Button(
                             "✨ Generate",
                             variant="primary",
                             size="lg"
@@ -450,10 +435,10 @@ class SimplifiedKirokuUI:
             )
             
             # Generate plots button
-            generate_btn.click(
-                fn=self.generate_multiple_plots,
-                inputs=[plot_prompt, num_plots_slider],
-                outputs=[*plot_images, plot_selector, selected_code, status_text]
+            generate_button.click(
+                self.generate_multiple_plots,
+                inputs=[plot_prompt],
+                outputs=plot_images,
             )
             
             # Radio button selection

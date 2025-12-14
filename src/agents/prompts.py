@@ -129,6 +129,8 @@ REFERENCES_PROMPT = (
     "In this example, there are no authors to the paper, and the title is "
     "'The Need For AI-Powered Cybersecurity to Tackle AI-Driven \n\n"
     "Output must be in markdown format."
+    "If user-provided files are listed, include references that correspond to those sources"
+    "(prefer official citation metadata and permanent links)."
 )
 
 WRITER_REVIEW_PROMPT = (

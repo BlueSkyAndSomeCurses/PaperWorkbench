@@ -889,12 +889,30 @@ class GenerateReferences(State):
         logs = []
         content = state.content
         joined_content = "\n\n".join(content)
+
+        # Build a block with user-provided files (name + optional description)
+        user_files_entries = []
+        try:
+            for rf in (state.relevant_files or []):
+                try:
+                    p = Path(rf.file_path) if hasattr(rf, "file_path") else None
+                    fname = p.name if p else str(getattr(rf, "file_path", ""))
+                    desc = getattr(rf, "description", "")
+                    entry = f"{fname}" + (f" — {desc}" if desc else "")
+                    if fname:
+                        user_files_entries.append(entry)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        user_files_block = "\n".join(f"- {e}" for e in user_files_entries) if user_files_entries else ""
+
         human_content = (
             "Generate references for the following content entries. "
             "\n\n"
-            "Content:"
-            "\n\n"
-            f"{joined_content}"
+            "Content:" "\n\n" f"{joined_content}" "\n\n"
+            "If user-provided files are listed below, include references corresponding to those sources (prefer official citation metadata and permanent links when possible):" "\n"
+            f"{user_files_block}"
         )
         messages = [
             SystemMessage(content=REFERENCES_PROMPT),

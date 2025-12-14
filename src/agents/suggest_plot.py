@@ -71,8 +71,10 @@ class PlotSuggestionAgent(State):
     
     def __init__(self, model: ChatOpenAI):
         super().__init__(model, "plot_suggestion")
-        # Initialize the unified PlotSuggester
-        self.plotter = PlotSuggester(model)
+        # Initialize the unified PlotSuggester with working directory
+        self.plotter = PlotSuggester(model, working_dir=Path.cwd())
+        # Simple in-memory cache for loaded dataframes
+        self.data_cache: dict[Path, pd.DataFrame] = {}
 
     def run(self, state: AgentState) -> dict:
         """
@@ -120,19 +122,22 @@ class PlotSuggestionAgent(State):
                     }
                 )
                 
-                # Load the actual data for plot generation
-                data_df = self._load_dataframe(file_path)
+                # Load the actual data for plot generation with caching
+                if file_path not in self.data_cache:
+                    self.data_cache[file_path] = self._load_dataframe(file_path)
+                data_df = self.data_cache[file_path]
                 
-                # Generate multiple plot variations for this file
-                num_variations = 3  # Generate 3 variations per file
+                num_variations = 3
                 
                 for variation_idx in range(num_variations):
                     try:
-                        # Use PlotSuggester to generate plot
-                        fig, code = self.plotter.suggest_plot(
+                        # Generate a single plot per call; pass cached DataFrame to avoid disk I/O
+                        img_path, code = self.plotter.suggest_plot(
+                            relevant_file=relevant_file,
                             paper_content=content,
                             user_prompt=plot_description,
-                            num_plots=num_variations
+                            num_plots=num_variations,
+                            data_df=data_df,
                         )
                         
                         # Create PlotSuggestion object
@@ -143,7 +148,7 @@ class PlotSuggestionAgent(State):
                             rationale=f"Generated from {file_path.name} - {relevant_file.description}",
                             approved=False,
                             filename_base=file_path,
-                            figure=fig
+                            figure=None,
                         )
                         
                         suggested_plots.append(plot_suggestion)
@@ -160,13 +165,9 @@ class PlotSuggestionAgent(State):
         # Cleanup matplotlib resources
         self.plotter.cleanup()
         
-        # Format summary for display
-        # summary = self._format_plot_summary(suggested_plots)
-        
         return {
             "state": self.name,
             "suggested_plots": suggested_plots
-            # "draft": summary,
         }
     
     def _build_plot_description(self, file_info: dict, paper_context: dict) -> str:
