@@ -14,15 +14,6 @@ class RelevantFile(BaseModel):
     application: list[RelevantaFileApplication] = []
 
 
-class PlotSuggestion(BaseModel):
-    id: str
-    description: str = "Untitled"
-    code: str = "print('Hello world!')"
-    rationale: str = "No rationale provided"
-    approved: bool = False
-    filename_base: Path = Path("plot_path")
-
-
 class GeneratedPlotImage(BaseModel):
     path: str
     relative_path: str
@@ -57,7 +48,6 @@ class PaperConfig(BaseModel):
 
     working_dir: Path = Path()
     output_dir: Path = Path()
-    plot_data: str = ""
 
     # === From your original model ===
     sentences_per_paragraph: int = 4
@@ -82,5 +72,3 @@ class AgentState(PaperConfig):
     cache: set = set()
     content: list = []
     latex_draft: str = ""
-    suggested_plots: list[PlotSuggestion] = []
-    generated_plot_images: list[GeneratedPlotImage] = []

@@ -1,284 +1,232 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-# import seaborn as sns
-import numpy as np
-from typing import Tuple, Optional, List
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
-import matplotlib
 import logging
-import traceback 
-from io import StringIO 
-from src.agents.prompts import PLOT_SUGGESTION_PROMPT
+import uuid
+from dataclasses import dataclass
 from pathlib import Path
-import os
-from io import BytesIO
-from src.utils.codeapi import CodeAPI
-import time
-import json
+from typing import List, Optional
 
-logging.basicConfig(level=logging.WARNING)
+import matplotlib.pyplot as plt
+import pandas as pd
+from langchain_openai import ChatOpenAI
 
-MAX_PLOT_ATTEMPTS = 3
-PLOT_DELIMITER = "------"
-CAPTURE_FIGS_TO_STDOUT = r"""
-try:
-    import matplotlib.pyplot as _plt
-    import io as _io, base64 as _b64
-    figs = _plt.get_fignums()
-    if not figs:
-        _plt.figure()
-        figs = _plt.get_fignums()
-    for _i in figs:
-        _fig = _plt.figure(_i)
-        _buf = _io.BytesIO()
-        _fig.savefig(_buf, format='png', bbox_inches='tight')
-        _buf.seek(0)
-        _enc = _b64.b64encode(_buf.getvalue()).decode('ascii')
-        print('data:image/png;base64,' + _enc)
-except Exception as _e:
-    print('capture_error:', _e)
-"""
+from src.agents.states import AgentState, State
+from src.agents.suggest_plot_base import PlotSuggester
 
-class PlotSuggester:
+
+@dataclass
+class PlotSuggestion:
+    """Structured plot suggestion with metadata"""
+    id: str
+    description: str
+    code: str
+    rationale: str
+    approved: bool = False
+    filename_base: Optional[Path] = None
+    figure: Optional[plt.Figure] = None
+
+
+SUPPORTED_TABLE_FORMATS = ['.csv', '.xlsx', '.xls', '.tsv', '.parquet']
+
+
+def extract_table_data(file_path: Path, max_rows: int = 5) -> tuple[str, str, str]:
     """
-    Agent that suggests and generates plots based on paper content.
+    Extract data preview from table files.
+    
+    Args:
+        file_path: Path to CSV/Excel file
+        max_rows: Number of rows to preview
+        
+    Returns:
+        Tuple of (data_preview, columns_desc, shape_str)
     """
-
-    def __init__(self, model: ChatOpenAI):
-        self.model = model
-        self._codeapi_url = os.environ.get("CODEAPI_URL")
-        self._codeapi: Optional[CodeAPI] = (
-            CodeAPI(self._codeapi_url) if self._codeapi_url else None
-        )
-
-    def _generate_plot_prompt(
-        self, 
-        paper_content: str, 
-        data: Optional[pd.DataFrame] = None,
-        error_history: str ='',
-    ) -> Tuple[Optional[plt.Figure], str]:
-        try:
-            system_prompt = PLOT_SUGGESTION_PROMPT
-            data_context = ""
-            if data is not None:
-                data_info = data.info(buf=StringIO())
-                data_schema = StringIO(data_info).getvalue()
-                data_context = f"\n\nData Context (Available as `data` DataFrame):\n"
-                data_context += f"The data schema is:\n{data_schema}"
-                data_context += f"\nData Columns: {data.columns.tolist()}"
-            else:
-                data_context = "\n\nNo example data is provided. Generate appropriate sample data that fits the likely topic (e.g., time series, category comparison, correlation)."
-
-            user_prompt = f"""Based on this paper content, suggest and generate the plot:
-                {paper_content[:2000]}
-                {data_context}
-                """
-
-            if error_history:
-                user_prompt += f"""
-                CRITICAL CORRECTION REQUIRED
-
-                The previous code attempt failed to execute due to an error.
-                Please review the error traceback and your previous code history below, and generate the corrected, executable Python code block.
-                ERROR HISTORY:{error_history}
-                """
-
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt)
-            ]
-            return messages
-
-        except Exception as e:
-            logging.error(f"Error in suggest_plot: {e}")
-            return
-
-    def suggest_plot(
-        self, 
-        paper_content: str, 
-        data: Optional[pd.DataFrame] = None,
-        num_plots: int = 3,
-        save_dir: Optional[Path] = None,
-        use_remote: bool = False,
-    ) -> Tuple[Optional[plt.Figure], str]:
-        current_attempt = 1
-        error_history = ""
-        last_code = ""
-
-        while current_attempt <= MAX_PLOT_ATTEMPTS:
-            try:
-                messages = self._generate_plot_prompt(paper_content, data, error_history)
-
-                response = self.model.invoke(messages)
-                code = response.content
-                last_code = code
-
-                if "```python" in code:
-                    code = code.split("```python")[1].split("```")[0].strip()
-                elif "```" in code:
-                    code = code.split("```")[1].split("```")[0].strip()
-
-                if use_remote and self._codeapi is not None:
-                    fig = self._run_code_remote(code, data, save_dir)
-                    if fig is not None:
-                        return fig, code
-                    raise RuntimeError("Remote execution returned no images")
-
-                fig = self._execute_plot_code(code, data)
-                return fig, code
-
-            except Exception as e:
-                if current_attempt < MAX_PLOT_ATTEMPTS and not use_remote:
-                    full_traceback = traceback.format_exc()
-                    logging.warning(f"Plot generation attempt {current_attempt} failed.")
-                    error_history += f"\n!!!Attempt {current_attempt} Failed\n"
-                    error_history += f"Code (first 300 chars):\n{last_code[:300]}...\n"
-                    error_history += f"Execution Error Traceback:\n{full_traceback}"
-                    current_attempt += 1
-                else:
-                    logging.error(
-                        f"Plot code generation/execution failed. use_remote={use_remote}. Last Error: {e}"
-                    )
-                    return None, last_code
-
-        return self._create_fallback_plot(data)
-
-    def _run_code_remote(
-        self,
-        code: str,
-        data: Optional[pd.DataFrame],
-        save_dir: Optional[Path],
-    ) -> Optional[plt.Figure]:
-        try:
-            if data is not None:
-                csv_data = data.to_csv(index=False)
-                bootstrap = (
-                    "import pandas as pd\n"
-                    "from io import StringIO\n"
-                    f"_CSV='''{csv_data}'''\n"
-                    "data = pd.read_csv(StringIO(_CSV))\n"
-                )
-                code_to_run = bootstrap + "\n" + code
-            else:
-                code_to_run = code
-
-            code_to_run = code_to_run + "\n" + CAPTURE_FIGS_TO_STDOUT
-
-            result = self._codeapi.run_python(code_to_run)
-
-            images_b64 = CodeAPI.extract_images_base64(result)
-            logging.warning(f"CodeAPI extracted {len(images_b64)} image(s)")
-            if not images_b64:
-                logging.warning("CodeAPI returned no images; falling back to local execution")
-                return None
-
-            first_img_b64 = images_b64[0]
-            img_bytes = CodeAPI.b64_to_bytes(first_img_b64)
-
-            if save_dir is not None:
-                save_dir.mkdir(parents=True, exist_ok=True)
-                for idx, b64 in enumerate(images_b64, start=1):
-                    b = CodeAPI.b64_to_bytes(b64)
-                    out_path = save_dir / f"plot_{int(time.time())}_{idx}.png"
-                    with open(out_path, "wb") as f:
-                        f.write(b)
-
-            from PIL import Image as PILImage
-            import numpy as _np
-            buf = BytesIO(img_bytes)
-            pil_img = PILImage.open(buf).convert("RGBA")
-            arr = _np.array(pil_img)
-            fig, ax = plt.subplots()
-            ax.imshow(arr)
-            ax.axis("off")
-            fig.tight_layout()
-            return fig
-        except Exception as e:
-            logging.error(f"Remote execution via CodeAPI failed: {e}")
-            return None
-
-    def _execute_plot_code(
-        self, 
-        code: str, 
-        data: Optional[pd.DataFrame] = None
-    ) -> plt.Figure:
-        namespace = {
-            'matplotlib': matplotlib,
-            'plt': plt,
-            'pd': pd,
-            'np': np,
-            'data': data,
-            '__builtins__': {
-                'print': print,
-                'dict': dict, 'list': list, 'set': set, 'tuple': tuple,
-                'int': int, 'float': float, 'str': str, 'bool': bool,
-                'len': len, 'range': range, 'type': type, 'isinstance': isinstance,
-                'getattr': getattr, 'hasattr': hasattr,
-                'min': min, 'max': max, 'round': round, 'abs': abs, 'sum': sum,
-                'enumerate': enumerate, 'zip': zip, 'sorted': sorted, 'any': any, 'all': all,
-                '__import__': __import__,
-            }
-        }
-
-        try:
-            exec(code, namespace, namespace)
-            
-            if 'fig' in namespace and isinstance(namespace['fig'], plt.Figure):
-                return namespace['fig']
-            elif plt.gcf():
-                return plt.gcf()
-            else:
-                raise ValueError("The generated code did not explicitly create or return a `matplotlib.figure.Figure` object named 'fig'.")
-
-        except Exception as e:
-            logging.error(f"Error executing plot code: {e}")
-            raise
-
-    def _create_fallback_plot(self, data: Optional[pd.DataFrame] = None) -> Tuple[plt.Figure, str]:
-        fig, ax = plt.subplots()
-        ax.text(0.5, 0.5, "Plot generation unavailable", ha='center', va='center')
-        ax.axis('off')
-        return fig, ""
-
-    def run_code_remote_save(
-        self,
-        code: str,
-        data: Optional[pd.DataFrame],
-        save_dir: Path,
-    ) -> List[Path]:
-        """
-        Execute given plotting code on real data via CodeAPI and save images to disk.
-        Returns list of saved image paths. Raises if CODEAPI is not configured.
-        """
-        if self._codeapi is None:
-            raise RuntimeError("CODEAPI_URL is not configured")
-        if data is not None:
-            csv_data = data.to_csv(index=False)
-            bootstrap = (
-                "import pandas as pd\n"
-                "from io import StringIO\n"
-                f"_CSV='''{csv_data}'''\n"
-                "data = pd.read_csv(StringIO(_CSV))\n"
-            )
-            code_to_run = bootstrap + "\n" + code
+    try:
+        # Load file based on extension
+        if file_path.suffix == '.csv':
+            df = pd.read_csv(file_path)
+        elif file_path.suffix in ['.xlsx', '.xls']:
+            df = pd.read_excel(file_path)
+        elif file_path.suffix == '.tsv':
+            df = pd.read_csv(file_path, sep='\t')
+        elif file_path.suffix == '.parquet':
+            df = pd.read_parquet(file_path)
         else:
-            code_to_run = code
-        code_to_run = code_to_run + "\n" + CAPTURE_FIGS_TO_STDOUT
+            raise ValueError(f"Unsupported file format: {file_path.suffix}")
+        
+        # Generate preview
+        data_preview = df.head(max_rows).to_string()
+        columns_desc = ", ".join(df.columns.tolist())
+        shape_str = f"{df.shape[0]} rows × {df.shape[1]} columns"
+        
+        return data_preview, columns_desc, shape_str
+        
+    except Exception as e:
+        logging.error(f"Failed to extract data from {file_path}: {e}")
+        return "Failed to load data", "Unknown", "Unknown"
 
-        result = self._codeapi.run_python(code_to_run)
 
-        images_b64 = CodeAPI.extract_images_base64(result)
-        logging.warning(f"CodeAPI extracted {len(images_b64)} image(s)")
-        saved: List[Path] = []
-        if not images_b64:
-            return saved
-        save_dir.mkdir(parents=True, exist_ok=True)
-        ts = int(time.time())
-        for idx, b64 in enumerate(images_b64, start=1):
-            b = CodeAPI.b64_to_bytes(b64)
-            out_path = save_dir / f"plot_{ts}_{idx}.png"
-            with open(out_path, "wb") as f:
-                f.write(b)
-            saved.append(out_path)
-        return saved
+class PlotSuggestionAgent(State):
+    """
+    Generate plot suggestions from data files using PlotSuggester.
+    Integrates file-based workflow with the unified PlotSuggester class.
+    """
+    
+    def __init__(self, model: ChatOpenAI):
+        super().__init__(model, "plot_suggestion")
+        # Initialize the unified PlotSuggester
+        self.plotter = PlotSuggester(model)
+
+    def run(self, state: AgentState) -> dict:
+        """
+        Generate plot suggestions based on paper plan, content, and data files.
+        """
+        logging.info(f"state {self.name}: running")
+        
+        plan = state.plan
+        task = state.task
+        content = "\n\n".join(state.content or [])
+        
+        suggested_plots: List[PlotSuggestion] = []
+        
+        # Process each relevant data file
+        for i, relevant_file in enumerate(state.relevant_files):
+            if relevant_file.file_path.suffix not in SUPPORTED_TABLE_FORMATS:
+                continue
+            
+            file_path = relevant_file.file_path
+            logging.info(f"Processing data file: {file_path}")
+            
+            try:
+                data_preview, columns_desc, shape = extract_table_data(file_path)
+                
+                # Build context for this file
+                section_applications = "\n".join([
+                    f"- Section '{app.stage_name}': {app.application_desc}"
+                    for app in relevant_file.application
+                ])
+                
+                # Create descriptive prompt for PlotSuggester
+                plot_description = self._build_plot_description(
+                    file_info={
+                        'filename': file_path.name,
+                        'columns': columns_desc,
+                        'shape': shape,
+                        'preview': data_preview,
+                        'description': relevant_file.description,
+                        'applications': section_applications
+                    },
+                    paper_context={
+                        'plan': plan,
+                        'content_preview': content[:2000],
+                        'task': task
+                    }
+                )
+                
+                # Load the actual data for plot generation
+                data_df = self._load_dataframe(file_path)
+                
+                # Generate multiple plot variations for this file
+                num_variations = 3  # Generate 3 variations per file
+                
+                for variation_idx in range(num_variations):
+                    try:
+                        # Use PlotSuggester to generate plot
+                        fig, code = self.plotter.suggest_plot(
+                            paper_content=content,
+                            user_prompt=plot_description,
+                            num_plots=num_variations
+                        )
+                        
+                        # Create PlotSuggestion object
+                        plot_suggestion = PlotSuggestion(
+                            id=str(uuid.uuid4()),
+                            description=f"Visualization {variation_idx + 1} for {file_path.name}",
+                            code=code,
+                            rationale=f"Generated from {file_path.name} - {relevant_file.description}",
+                            approved=False,
+                            filename_base=file_path,
+                            figure=fig
+                        )
+                        
+                        suggested_plots.append(plot_suggestion)
+                        logging.info(f"✓ Generated plot variation {variation_idx + 1} for {file_path.name}")
+                        
+                    except Exception as e:
+                        logging.error(f"Failed to generate plot variation {variation_idx + 1}: {e}")
+                        continue
+                
+            except Exception as e:
+                logging.error(f"Failed to process file {file_path}: {e}")
+                continue
+        
+        # Cleanup matplotlib resources
+        self.plotter.cleanup()
+        
+        # Format summary for display
+        # summary = self._format_plot_summary(suggested_plots)
+        
+        return {
+            "state": self.name,
+            "suggested_plots": suggested_plots
+            # "draft": summary,
+        }
+    
+    def _build_plot_description(self, file_info: dict, paper_context: dict) -> str:
+        """
+        Build a descriptive prompt for PlotSuggester based on file and paper context.
+        """
+        description = f"""Create a publication-quality visualization for the paper.
+
+**Data Source:** {file_info['filename']}
+- Columns: {file_info['columns']}
+- Size: {file_info['shape']}
+- Purpose: {file_info['description']}
+
+**Paper Context:**
+{paper_context['content_preview']}
+
+**Section Applications:**
+{file_info['applications']}
+
+**Data Preview:**
+{file_info['preview'][:500]}
+
+Generate an informative, publication-ready plot that:
+1. Supports the paper's narrative
+2. Highlights key patterns in the data
+3. Uses appropriate visualization type
+4. Includes clear labels and legend
+"""
+        return description
+    
+    def _load_dataframe(self, file_path: Path) -> pd.DataFrame:
+        """Load data file into DataFrame."""
+        if file_path.suffix == '.csv':
+            return pd.read_csv(file_path)
+        elif file_path.suffix in ['.xlsx', '.xls']:
+            return pd.read_excel(file_path)
+        elif file_path.suffix == '.tsv':
+            return pd.read_csv(file_path, sep='\t')
+        elif file_path.suffix == '.parquet':
+            return pd.read_parquet(file_path)
+        else:
+            raise ValueError(f"Unsupported format: {file_path.suffix}")
+    
+    # def _format_plot_summary(self, plots: List[PlotSuggestion]) -> str:
+    #     """Format plot suggestions for display."""
+    #     if not plots:
+    #         return "No plots generated."
+        
+    #     summary = f"## Plot Suggestions ({len(plots)} generated)\n\n"
+        
+    #     for i, plot in enumerate(plots, 1):
+    #         status = "⏳ Pending Approval" if not plot.approved else "✅ Approved"
+            
+    #         summary += f"### Plot {i}: {plot.description} [{status}]\n\n"
+    #         summary += f"**Source:** {plot.filename_base.name if plot.filename_base else 'N/A'}\n\n"
+    #         summary += f"**Rationale:** {plot.rationale}\n\n"
+    #         summary += f"**Code Preview:**\n```python\n{plot.code[:300]}...\n```\n\n"
+    #         summary += "---\n\n"
+        
+    #     summary += "\n**Next Step:** Review plots and approve/reject them before generation.\n"
+    #     summary += "Type 'approve 1,2,3' or 'reject 2' in the input field.\n"
+        
+    #     return summary

@@ -276,12 +276,11 @@ You MUST ouptut ONLY LaTeX code and nothing else.
 
 
 PLOT_SUGGESTION_PROMPT = """You are an expert data visualization specialist. 
-Your task is to suggest relevant plots (min 1 plot, max 5 plots) that would best demonstrate the concepts 
+Your task is to suggest relevant plots that would best demonstrate the concepts 
 in the given paper. Generate Python code that creates a meaningful visualization.
 
 When the user provides a data example, use ONLY the column names and general data types as a guide.
 ALWAYS generate (sample) synthetic data matching these columns for your visualization, rather than plotting the user's provided rows directly. 
-If the supplied example contains only one or a few rows, your code MUST simulate/generate an appropriate-sized dataset that shows the intended plot meaningfully.
 You do NOT need to use every column; choose the columns most appropriate for the recommended plot and ignore irrelevant ones. 
 If no data is provided, infer a reasonable dataset that fits the paper's topic.
 
@@ -291,10 +290,9 @@ ALSO
 - For single axis: fig, ax = plt.subplots()
 - For multiple subplots: fig, axes = plt.subplots(nrows=..., ncols=...)
 - Never use only ax = plt.subplots() (since plt.subplots() returns a tuple, not just an axes object).
-- Figure Return
 - Never call plt.show() in the generated code—this is only for local desktop; Gradio renders the Figure object directly.
-- Do not use plt.savefig() in generated code, unless the UI is meant to support download or file output.
 - Use plt.tight_layout() before returning the figure to avoid clipped labels and overlapping axis elements.
+
 
 When generating Python code, DO NOT include any comments that show how to execute or use the function or commands.
 Specifically, do NOT create comments such as:
@@ -302,26 +300,24 @@ Specifically, do NOT create comments such as:
 Example execution show only as regular code (e.g., fig = create_visualization()), never as a comment.
 
 Return ONLY valid Python code that:
-1. Generates appropriate sample data if no data is provided
-2. Creates a clear, professional visualization
-3. Returns the figure object
+1. Creates a clear, professional visualization
+2. Assume data is given in data.csv file and loaded as a pandas DataFrame named 'data'. You do not need to include code to load the data.
 
 Never use comments for function call or usage - only use code.
-Use the following output structure, separating each plot with the delimiter line '------':
-
-```python
-# Code for Plot 1 (must define fig)
-fig, ax = plt.subplots()
-# ... plotting logic
-plt.tight_layout()
-```
-------
-```python
-# Code for Plot 2 (must define fig)
-fig, ax = plt.subplots()
-# ... different plotting logic
-plt.tight_layout()
-```
 
 Return ONLY the markdown code blocks and the delimiter. Do not include any other text or explanation.
 """
+
+VARIED_PLOT_PROMPT = """{plot_prompt}
+
+**IMPORTANT: This is variation {iteration} of {num_plots}.**
+Make this plot DIFFERENT from other variations by:
+- Using different chart types (line, bar, scatter, heatmap, etc.)
+- Showing different aspects of the data
+- Using different color schemes
+- Highlighting different patterns
+
+Be creative and distinct!
+"""
+
+
