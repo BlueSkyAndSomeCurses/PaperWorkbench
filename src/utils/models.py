@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional
+
 
 
 class RelevantaFileApplication(BaseModel):
@@ -44,7 +46,7 @@ class PaperConfig(BaseModel):
     references: list = []
     number_of_queries: int = 0
     max_revisions: int = 1
-    temperature: float = 0.0
+    temperature: float = 1.0
 
     working_dir: Path = Path()
     output_dir: Path = Path()
@@ -64,6 +66,11 @@ class PaperConfig(BaseModel):
 
     workflow_logs: list[WorkflowLog] = []
 
+    revision_only: bool = False
+    draft: Optional[str] = None
+
+    halt_execution: bool = False
+
 
 class AgentState(PaperConfig):
     task: str = ""
@@ -72,3 +79,6 @@ class AgentState(PaperConfig):
     cache: set = set()
     content: list = []
     latex_draft: str = ""
+
+    warnings: list[str] = []
+    halt_execution: bool = False

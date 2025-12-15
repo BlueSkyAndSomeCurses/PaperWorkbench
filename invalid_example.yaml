@@ -1,0 +1,35 @@
+title: "Acoustic Properties of Wooden Violins"
+suggest_title: false
+generate_citations: false
+model_name: "gpt-5-nano"
+type_of_document: "Research conference paper"
+area_of_paper: "Acoustics"
+
+revision_only: true
+
+draft: |
+  lorem ipsum
+
+section_names:
+  Introduction: |
+    Discuss why wood choice affects sound resonance.
+  Analysis: |
+    Compare frequency response across different materials.
+
+number_of_paragraphs:
+  Introduction: 1
+  Analysis: 1
+
+hypothesis: >
+  Wood density significantly influences harmonic richness in violins.
+
+number_of_queries: 0
+max_revisions: 1
+temperature: 1
+
+files_descriptions:
+  - file_name: "violin_spectra.csv"
+
+working_dir: "/tmp/kiroku/work"
+output_dir: "/tmp/kiroku/output"
+latex_template: "IEEE"
