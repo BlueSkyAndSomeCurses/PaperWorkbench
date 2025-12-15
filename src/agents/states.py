@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Claudionor Coelho Jr, Fabrício José Vieira Ceolin, Luiza Nacif Coelho
+from langgraph.graph import END
 
 import json
 import logging
@@ -61,13 +62,59 @@ class State:
         self.model = model
         self.name = f"{name}_graph_state"
 
+def is_meaningful_draft(text: str) -> bool:
+        if not text:
+            return False
+
+        stripped = text.strip().lower()
+
+        if len(stripped) < 50:
+            return False
+
+        placeholders = [
+            "lorem ipsum",
+            "todo",
+            "tbd",
+            "placeholder",
+        ]
+
+        return not any(p in stripped for p in placeholders)
+
 
 class AnalyzeRelevantFiles(State):
     def __init__(state, model: ChatOpenAI) -> None:
         super().__init__(model, "analyze_relevant_files")
 
+
+
     def run(self, state: AgentState, config: dict) -> dict:
         logging.info(f"state {self.name}: running")
+
+        warnings = list(state.warnings)
+
+        # --------- DRAFT VALIDATION (FIRST NODE GUARD) ----------
+        if state.revision_only:
+            draft = getattr(state, "draft", None) or getattr(state, "initial_draft", None)
+
+            invalid = (
+                draft is None
+                or len(draft.strip()) < 50
+                or draft.strip().lower() in {"lorem ipsum", "lorem ipsum dolor sit amet"}
+            )
+
+            if invalid:
+                warning = (
+                    "Invalid draft provided: `revision_only` is true, but the draft is "
+                    "missing or does not contain meaningful content."
+                )
+
+                logging.warning(warning)
+
+                return {
+                    "halt_execution": True,
+                    "warnings": state.warnings + [warning],
+                }
+
 
         def process_file(
             relevant_file: RelevantFile,

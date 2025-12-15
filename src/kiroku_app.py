@@ -63,7 +63,7 @@ class DocumentWriter:
         suggest_title: bool = False,
         generate_citations: bool = True,
         model_name: str = "openai",
-        temperature: float = 0.0,
+        temperature: float = 1.0,
         relevant_files: list[RelevantFile] | None = None,
     ) -> None:
         if relevant_files is None:
@@ -117,6 +117,22 @@ class DocumentWriter:
             and not self.generate_citations
         )
 
+    # def check_writing_status(self, state: AgentState) -> str:
+    #     """
+    #     Checks if the writing process encountered a critical error (like invalid draft).
+    #     """
+    #     # If the state has an error message, stop the graph
+    #     if getattr(state, "error", None):
+    #         logging.warning(f"Stopping graph execution due to error: {state.error}")
+    #         return "stop"
+
+    #     return "continue"
+
+    def route_after_analyze(state: AgentState):
+        if getattr(state, "halt_execution", False):
+            return END
+        return "suggest_title_graph_state" if self.suggest_title else "internet_search_graph_state"
+
     def create_graph(self) -> None:
         """
         Builds a graph to execute the different phases of a document writing.
@@ -158,17 +174,25 @@ class DocumentWriter:
                 "write_abstract_graph_state": "write_abstract_graph_state",
             },
         )
-        if self.suggest_title:
-            builder.add_edge(
-                "analyze_relevant_files_graph_state", "suggest_title_graph_state"
-            )
-            builder.add_edge(
-                "suggest_title_graph_state", "suggest_title_review_graph_state"
-            )
-        else:
-            builder.add_edge(
-                "analyze_relevant_files_graph_state", "internet_search_graph_state"
-            )
+        # if self.suggest_title:
+        #     builder.add_edge(
+        #         "analyze_relevant_files_graph_state", "suggest_title_graph_state"
+        #     )
+        #     builder.add_edge(
+        #         "suggest_title_graph_state", "suggest_title_review_graph_state"
+        #     )
+        # else:
+        #     builder.add_edge(
+        #         "analyze_relevant_files_graph_state", "internet_search_graph_state"
+        #     )
+        builder.add_conditional_edges(
+            "analyze_relevant_files_graph_state",
+            lambda state: END if state.halt_execution
+            else ("suggest_title_graph_state" if self.suggest_title else "internet_search_graph_state"),
+        )
+        # builder.add_edge(
+        #         "suggest_title_graph_state", "suggest_title_review_graph_state"
+        #     )
         builder.add_edge(
             "internet_search_graph_state", "topic_sentence_writer_graph_state"
         )
@@ -179,6 +203,14 @@ class DocumentWriter:
         builder.add_edge(
             "paper_writer_graph_state", "writer_manual_reviewer_graph_state"
         )
+        # builder.add_conditional_edges(
+        #     "paper_writer_graph_state",
+        #     self.check_writing_status,
+        #     {
+        #         "continue": "writer_manual_reviewer_graph_state",
+        #         "stop": END
+        #     }
+        # )
         builder.add_edge(
             "reflection_reviewer_graph_state",
             "additional_reflection_instructions_graph_state",
@@ -276,6 +308,9 @@ class DocumentWriter:
         response = self.graph.invoke(state, config)
         self.state = response
         draft = response.get("draft", "").strip()
+        if not draft:
+        # Return a clear error if draft is empty
+            return "❌ Execution stopped: the YAML did not produce a draft."
         # we have to do this because the LLM sometimes decide to add
         # this to the final answer.
         if "```markdown" in draft:
@@ -293,6 +328,11 @@ class DocumentWriter:
         config["configurable"]["thread_id"] = self.get_thread_id()
         for event in self.graph.stream(state, config, stream_mode="values"):
             self.state = event
+            draft = event.get("draft", "").strip() if isinstance(event, dict) else ""
+            if not draft:
+                # Send a clear error to the UI and stop streaming
+                yield {"type": "error", "messages": ["The YAML did not produce a draft."]}
+                return
             yield event
 
     def stream(self, state, config):
@@ -767,11 +807,11 @@ class KirokuUI:
                     js = gr.JSON(scale=5)
                 _, _, files_preview = self._make_files_preview()
             with gr.Tab("Document Writing"):
+                self.error_box = gr.HTML(visible=False)
                 current_state = gr.Textbox(label="Current State")
                 out = gr.Textbox(label="Echo")
                 inp = gr.Textbox(placeholder="Instruction", label="Rider")
                 markdown = gr.Markdown("")
-                # Add Save button to persist outputs (latex, html, docx, etc.)
                 save_btn = gr.Button("💾 Save", variant="secondary")
 
             with gr.Tab("References") as self.ref_block:
@@ -906,127 +946,6 @@ class KirokuUI:
                 ],
             )
 
-    # def generate_multiple_plots(self, plot_prompt: str):
-    #     """Generate multiple plot variations using fixed NUM_PLOTS"""
-
-    #     try:
-    #         if not self.plotter:
-    #             self.plotter = self._initialize_plotter()
-
-    #         if not self.plotter:
-    #             yield self._create_error_message(
-    #                 "Could not initialize plotter. Please check logs."
-    #             )
-    #             return
-
-    #         # Clear previous gallery
-    #         self.plot_gallery = []
-    #         self.selected_plot_id = None
-
-    #         # Get paper context if available
-    #         paper_context = ""
-    #         relevant_files = []
-
-    #         # Try to get latest context from writer if available
-    #         if self.writer:
-    #             try:
-    #                 state = self.writer.get_state()
-    #                 if state and state.values:
-    #                     if state.values.get("relevant_files"):
-    #                         relevant_files = state.values["relevant_files"]
-
-    #                     else:
-    #                         yield self._create_error_message(
-    #                             "⚠️ No relevant files found in writer state."
-    #                         )
-    #                         return
-    #                     if state.values.get("draft"):
-    #                         paper_context = state.values["draft"]
-    #                     elif state.values.get("content"):
-    #                         content = state.values["content"]
-    #                         paper_context = (
-    #                             "\n\n".join(content)
-    #                             if isinstance(content, list)
-    #                             else str(content)
-    #                         )
-    #                     elif state.values.get("hypothesis"):
-    #                         paper_context = state.values["hypothesis"]
-    #             except Exception as e:
-    #                 logging.warning(f"Could not retrieve writer state: {e}")
-
-    #         if (
-    #             not paper_context
-    #             and self.state_values
-    #             and hasattr(self.state_values, "hypothesis")
-    #         ):
-    #             paper_context = self.state_values.hypothesis
-
-    #         has_prompt = bool(plot_prompt.strip())
-    #         has_draft = bool(paper_context.strip())
-
-    #         if not has_prompt and not has_draft and not relevant_files:
-    #             yield self._create_error_message(
-    #                 "⚠️ No input provided\n\nPlease provide a plot description."
-    #             )
-    #             return
-
-    #         # Generate plots with VARIATION in the prompt
-    #         for relevant_file in relevant_files:
-    #             logging.info(
-    #                 f"Generating plot for relevant file: {relevant_file.file_path}"
-    #             )
-    #             for i in range(NUM_PLOTS):
-    #                 logging.info(f"Generating variation {i + 1}/{NUM_PLOTS}...")
-
-    #                 # ⭐ Show "generating" status immediately
-    #                 status_update = f"🔄 Generating plot {i + 1}/{NUM_PLOTS}..."
-    #                 current_gallery = self.render_gallery()
-    #                 # Update just the status text (last element in the tuple)
-    #                 yield (*current_gallery[:-1], status_update)
-
-    #                 try:
-    #                     # Add variation instruction to prompt
-    #                     varied_prompt = f"{plot_prompt}\n\nThis is variation {i+1} of {NUM_PLOTS}. Make it distinct."
-
-    #                     fig_path, code = self.plotter.suggest_plot(
-    #                         relevant_file=relevant_file,
-    #                         paper_content=paper_context if has_draft else "",
-    #                         user_prompt=varied_prompt,  # ← Use varied prompt
-    #                         num_plots=NUM_PLOTS,
-    #                     )
-
-    #                     plot_version = PlotVersion(
-    #                         id=str(uuid.uuid4()),
-    #                         image_path=fig_path,
-    #                         code=code,  # ← Each should now have different code
-    #                         timestamp=datetime.now(),
-    #                         selected=False,
-    #                     )
-
-    #                     self.plot_gallery.append(plot_version)
-    #                     logging.info(f"✓ Variation {i + 1} generated")
-    #                     yield self.render_gallery()
-
-    #                     # Log code preview to verify it's different
-    #                     logging.debug(
-    #                         f"Variation {i + 1} code preview: {code[:100]}..."
-    #                     )
-
-    #                 except Exception as e:
-    #                     logging.error(f"Failed to generate variation {i + 1}: {e}")
-    #                     continue
-
-    #             success_count = len(self.plot_gallery)
-    #             logging.info(f"✓ Complete: {success_count}/{NUM_PLOTS} successful")
-
-    #             # yield self.render_gallery()
-
-    #     except Exception as e:
-    #         logging.error("Critical error in generate_multiple_plots", exc_info=True)
-    #         yield self._create_error_message(f"Critical Error:\n{str(e)}")
-    #     finally:
-    #         if self.plotter:
-    #             self.plotter.cleanup()
     def generate_multiple_plots(self, plot_prompt: str):
         """Generate one plot per relevant file"""
 
@@ -1374,10 +1293,8 @@ class KirokuUI:
 def run():
     """Main entry point for the application."""
 
-    # Get working directory from environment variable or use current directory
     working_dir = Path(os.environ.get("KIROKU_PROJECT_DIRECTORY", "."))
 
-    # Create and launch the UI
     ui = KirokuUI(working_dir)
     ui.launch_ui()
 

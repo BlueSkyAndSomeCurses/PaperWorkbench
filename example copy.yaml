@@ -1,0 +1,37 @@
+title: "Acoustic Properties of Wooden Violins"
+suggest_title: false
+generate_citations: false
+model_name: "gpt-5-nano"
+type_of_document: "Research conference paper"
+area_of_paper: "Acoustics"
+
+revision_only: true
+
+draft: |
+  The construction of violins has relied on specific wood species for centuries, primarily spruce for the top plate and maple for the back. This choice is not merely aesthetic but fundamental to the instrument's acoustic signature. The resonance of the violin body acts as an amplifier for the string vibration, and the mechanical properties of the wood, such as stiffness and density, dictate how these vibrations are transmitted. Different densities in wood can lead to variations in the speed of sound through the material, which ultimately affects the standing waves and the resulting tone color.
+
+  To understand this relationship, we analyzed the frequency response of several violin plates with varying wood densities. The data suggests that higher density woods tend to dampen high-frequency harmonics more rapidly than lower density alternatives. By examining the spectral centroid and the decay rates of specific partials, we observed a correlation between the mass of the plate and the "brightness" of the sound. This preliminary analysis indicates that wood selection is a critical variable in controlling the harmonic richness of the instrument.
+
+section_names:
+  Introduction: |
+    Discuss why wood choice affects sound resonance.
+  Analysis: |
+    Compare frequency response across different materials.
+
+number_of_paragraphs:
+  Introduction: 1
+  Analysis: 1
+
+hypothesis: >
+  Wood density significantly influences harmonic richness in violins.
+
+number_of_queries: 0
+max_revisions: 1
+temperature: 1
+
+files_descriptions:
+  - file_name: "violin_spectra.csv"
+
+working_dir: "/tmp/kiroku/work"
+output_dir: "/tmp/kiroku/output"
+latex_template: "IEEE"
